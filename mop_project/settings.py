@@ -180,12 +180,13 @@ MESSAGING_POLL_INTERVAL_MS = 4000
 
 # Login settings
 LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'login'  # Changed from 'dashboard' to 'login'
+LOGIN_REDIRECT_URL = 'dashboard'  # Ensure this points to your standard post-login dashboard view
 LOGOUT_REDIRECT_URL = 'login'
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
-# Use memory-based sessions by default, but allow override for production 
-# (LocMemCache doesn't work well with multiple workers in production)
-SESSION_ENGINE = config('SESSION_ENGINE', default='django.contrib.sessions.backends.cache')
+
+# Use database-backed sessions by default to prevent multi-worker session loss in production
+SESSION_ENGINE = config('SESSION_ENGINE', default='django.contrib.sessions.backends.db')
+
 CACHES = {
     'default': {
         'BACKEND': config('CACHE_BACKEND', default='django.core.cache.backends.locmem.LocMemCache'),
