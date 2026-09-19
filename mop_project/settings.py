@@ -28,12 +28,10 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = config(
     'ALLOWED_HOSTS',
-    default='127.0.0.1,localhost,.ngrok-free.app,.ngrok.io,twiglike-cheekily-codi.ngrok-free.dev',
     cast=Csv(),
 )
 CSRF_TRUSTED_ORIGINS = config(
     'CSRF_TRUSTED_ORIGINS',
-    default='http://127.0.0.1:8000,http://127.0.0.1:8005,https://twiglike-cheekily-codi.ngrok-free.dev',
     cast=Csv(),
 )
 
@@ -112,10 +110,19 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
         'OPTIONS': {
-            'min_length': 4,
+            'min_length': 8,
         }
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
 
@@ -150,6 +157,7 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 if not DEBUG:
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=True, cast=bool)
     SESSION_COOKIE_SECURE = config('SESSION_COOKIE_SECURE', default=True, cast=bool)
     CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=True, cast=bool)
@@ -157,7 +165,6 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000  # 1 year
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
-    CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', cast=Csv())
 
 # Custom user model
 AUTH_USER_MODEL = 'administration.CustomUser'
@@ -176,11 +183,47 @@ LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'login'  # Changed from 'dashboard' to 'login'
 LOGOUT_REDIRECT_URL = 'login'
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
-# Use memory-based sessions so they are cleared when server restarts
-SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+# Use memory-based sessions by default, but allow override for production 
+# (LocMemCache doesn't work well with multiple workers in production)
+SESSION_ENGINE = config('SESSION_ENGINE', default='django.contrib.sessions.backends.cache')
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'BACKEND': config('CACHE_BACKEND', default='django.core.cache.backends.locmem.LocMemCache'),
         'LOCATION': 'unique-snowflake',
     }
 }
+
+# Production Logging
+if not DEBUG:
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'verbose': {
+                'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+                'style': '{',
+            },
+        },
+        'handlers': {
+            'console': {
+                'class': 'logging.StreamHandler',
+                'formatter': 'verbose',
+            },
+        },
+        'root': {
+            'handlers': ['console'],
+            'level': 'WARNING',
+        },
+        'loggers': {
+            'django': {
+                'handlers': ['console'],
+                'level': config('DJANGO_LOG_LEVEL', default='ERROR'),
+                'propagate': False,
+            },
+            'mop_project': {
+                'handlers': ['console'],
+                'level': config('DJANGO_LOG_LEVEL', default='INFO'),
+                'propagate': False,
+            },
+        },
+    }
