@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ config.title }} - Master Data - MOP System{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+    <div>
+        <nav style="margin-bottom: 10px;">
+            <a href="{% url 'master_data_index' %}" style="color: #667eea; text-decoration: none; font-size: 0.9rem;">←
+                Back to Master Data</a>
+        </nav>
+        <h2 style="font-size: 1.8rem; color: #2c3e50; font-weight: 700;">{{ config.title }}</h2>
+    </div>
+    <a href="{% url 'master_data_create' category_slug %}"
+        style="padding: 10px 20px; background: #4caf50; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+        <i class="fas fa-plus"></i> Add New {{ config.singular }}
+    </a>
+</div>
+
+<!-- Search and Filter -->
+<div
+    style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 25px;">
+    <form method="GET" style="display: flex; gap: 15px;">
+        <div style="flex: 1; position: relative;">
+            <input type="text" name="search" value="{{ search_query }}" placeholder="Search by name..."
+                style="width: 100%; padding: 10px 15px 10px 40px; border: 1px solid #ddd; border-radius: 8px; outline: none;">
+            <span style="position: absolute; left: 15px; top: 10px; color: #7f8c8d;"><i
+                    class="fas fa-search"></i></span>
+        </div>
+        <button type="submit"
+            style="padding: 10px 25px; background: #1e3a8a; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Search</button>
+        {% if search_query %}
+        <a href="{% url 'master_data_list' category_slug %}"
+            style="padding: 10px 20px; background: #f5f7fa; color: #2c3e50; text-decoration: none; border: 1px solid #ddd; border-radius: 8px; font-weight: 600;">Clear</a>
+        {% endif %}
+    </form>
+</div>
+
+<!-- Data Table -->
+<div style="background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); overflow: hidden;">
+    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+        <thead>
+            <tr style="background: #f8f9fa; border-bottom: 2px solid #edf2f7;">
+                <th style="padding: 18px 25px; color: #4a5568; font-weight: 600; font-size: 0.9rem;">Name</th>
+                <!-- <th style="padding: 18px 25px; color: #4a5568; font-weight: 600; font-size: 0.9rem;">Remarks</th> -->
+                <th style="padding: 18px 25px; color: #4a5568; font-weight: 600; font-size: 0.9rem;">Status</th>
+                <th style="padding: 18px 25px; color: #4a5568; font-weight: 600; font-size: 0.9rem; text-align: right;">
+                    Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr style="border-bottom: 1px solid #edf2f7; transition: background 0.2s ease;">
+                <td style="padding: 18px 25px; font-weight: 500; color: #2d3748;">{{ item.name }}</td>
+                <!-- <td style="padding: 18px 25px; color: #718096; font-size: 0.9rem;">{{ item.remarks|default:"-" }}</td> -->
+                <td style="padding: 18px 25px;">
+                    {% if item.is_active %}
+                    <span
+                        style="padding: 4px 12px; background: #e6fffa; color: #2c7a7b; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">Active</span>
+                    {% else %}
+                    <span
+                        style="padding: 4px 12px; background: #fff5f5; color: #c53030; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">Inactive</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 18px 25px; text-align: right;">
+                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                        <a href="{% url 'master_data_edit' category_slug item.id %}"
+                            style="padding: 6px 15px; background: #ebf4ff; color: #3182ce; text-decoration: none; border-radius: 6px; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;">Edit</a>
+                        <a href="javascript:void(0)"
+                            style="padding: 6px 15px; background: {% if item.is_active %}#fff5f5{% else %}#f0fff4{% endif %}; color: {% if item.is_active %}#c53030{% else %}#2f855a{% endif %}; text-decoration: none; border-radius: 6px; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;"
+                            onclick="showConfirmModal('Are you sure you want to {{ item.is_active|yesno:'deactivate,activate' }} this item?', '{% url 'master_data_toggle' category_slug item.id %}', {{ item.is_active|yesno:'true,false' }})">
+                            {% if item.is_active %}Deactivate{% else %}Activate{% endif %}
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" style="padding: 40px; text-align: center; color: #a0aec0;">
+                    No items found for this category.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,290 @@
+{% extends 'base.html' %}
+
+{% block title %}Post Management - MOP System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+
+    .page-header h2 {
+        color: #333;
+        font-size: 2rem;
+    }
+
+    .btn-create {
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+        color: white;
+        padding: 12px 25px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: transform 0.3s ease;
+    }
+
+    .btn-create:hover {
+        transform: translateY(-2px);
+    }
+
+    .filters-section {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .filters-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr auto;
+        gap: 15px;
+        align-items: end;
+    }
+
+    .filter-group label {
+        display: block;
+        color: #666;
+        font-weight: 600;
+        margin-bottom: 5px;
+        font-size: 0.9rem;
+    }
+
+    .filter-input {
+        width: 100%;
+        padding: 10px 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 0.95rem;
+    }
+
+    .btn-filter {
+        background: #1e3a8a;
+        color: white;
+        padding: 10px 25px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+    .table-container {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .data-table th {
+        background: #f5f7fa;
+        padding: 15px;
+        text-align: left;
+        color: #666;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .data-table td {
+        padding: 15px;
+        border-bottom: 1px solid #f0f0f0;
+        color: #555;
+    }
+
+    .data-table tr:hover {
+        background: #f9fafb;
+    }
+
+    .priority-badge {
+        font-family: 'Courier New', monospace;
+        background: #f0f3ff;
+        color: #667eea;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-weight: 600;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 5px 12px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .status-active {
+        background: #e8f5e9;
+        color: #2e7d32;
+    }
+
+    .status-inactive {
+        background: #ffebee;
+        color: #c62828;
+    }
+
+    .btn-edit {
+        background: #2196f3;
+        color: white;
+        padding: 6px 15px;
+        border-radius: 5px;
+        text-decoration: none;
+        font-size: 0.85rem;
+        margin-right: 5px;
+    }
+
+    .btn-toggle {
+        background: #ff9800;
+        color: white;
+        padding: 6px 15px;
+        border-radius: 5px;
+        text-decoration: none;
+        font-size: 0.85rem;
+    }
+
+    .btn-toggle.deactivate {
+        background: #f44336;
+    }
+
+    .btn-toggle.activate {
+        background: #4caf50;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #999;
+    }
+
+    .empty-state-icon {
+        font-size: 4rem;
+        margin-bottom: 15px;
+    }
+
+    /* ── Mobile & Tablet Responsive ── */
+    @media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .page-header h2 {
+            font-size: 1.5rem;
+        }
+
+        .btn-create {
+            width: 100%;
+            text-align: center;
+            padding: 10px 16px;
+        }
+
+        .filters-row {
+            grid-template-columns: 1fr;
+        }
+
+        .btn-filter {
+            width: 100%;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 10px 10px;
+            font-size: 0.85rem;
+        }
+
+        .btn-edit,
+        .btn-toggle {
+            padding: 5px 8px;
+            font-size: 0.78rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Post Management</h2>
+    <a href="{% url 'create_post' %}" class="btn-create"><i class="fas fa-plus"></i> Create New Post</a>
+</div>
+
+<!-- Filters -->
+<div class="filters-section">
+    <form method="GET">
+        <div class="filters-row">
+            <div class="filter-group">
+                <label>Search</label>
+                <input type="text" name="search" class="filter-input" placeholder="Search by post name"
+                    value="{{ search_query }}">
+            </div>
+            <div class="filter-group">
+                <label>Status</label>
+                <select name="status" class="filter-input">
+                    <option value="">All</option>
+                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                    <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <button type="submit" class="btn-filter">Filter</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Posts Table -->
+<div class="table-container">
+    {% if posts %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <!-- <th>Priority</th> -->
+                <th>Post Name</th>
+                <!-- <th>Remarks</th> -->
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for post in posts %}
+            <tr>
+                <!-- <td><span class="priority-badge">{{ post.priority }}</span></td> -->
+                <td style="font-weight: 600;">{{ post.name }}</td>
+                <!-- <td style="font-size: 0.9rem;">{{ post.remarks|default:"-" }}</td> -->
+                <td>
+                    <span class="status-badge status-{{ post.is_active|yesno:'active,inactive' }}">
+                        {{ post.is_active|yesno:'Active,Inactive' }}
+                    </span>
+                </td>
+                <td>
+                    <a href="{% url 'edit_post' post.id %}" class="btn-edit">Edit</a>
+                    <a href="javascript:void(0)"
+                        class="btn-toggle {% if post.is_active %}deactivate{% else %}activate{% endif %}"
+                        onclick="showConfirmModal('Are you sure you want to {{ post.is_active|yesno:'deactivate,activate' }} this post?', '{% url 'toggle_post_status' post.id %}', {{ post.is_active|yesno:'true,false' }})">
+                        {{ post.is_active|yesno:'Deactivate,Activate' }}
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon"><i class="fas fa-id-badge"></i></div>
+        <p>No posts found</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

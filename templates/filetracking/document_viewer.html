@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viewer - {{ doc.description|default:"Document" }} - MOP</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #1e1e24;
+            color: #f3f4f6;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .viewer-header {
+            background-color: #111827;
+            border-bottom: 1px solid #374151;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 60px;
+            flex-shrink: 0;
+            z-index: 100;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+        .doc-meta {
+            max-width: 40%;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .doc-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #ffffff;
+        }
+        .doc-sub {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .nav-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .nav-btn {
+            background-color: #374151;
+            color: #ffffff;
+            border: 1px solid #4b5563;
+            border-radius: 6px;
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+        .nav-btn:hover:not(.disabled) {
+            background-color: #4b5563;
+            border-color: #6b7280;
+            transform: translateY(-1px);
+        }
+        .nav-btn:active:not(.disabled) {
+            transform: translateY(0);
+        }
+        .nav-btn.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        .nav-counter {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #9ca3af;
+            background-color: #1f2937;
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid #374151;
+            min-width: 60px;
+            text-align: center;
+        }
+        .action-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .action-btn {
+            background: transparent;
+            color: #d1d5db;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            text-decoration: none;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .action-btn:hover {
+            color: #ffffff;
+            background-color: rgba(255, 255, 255, 0.08);
+            transform: translateY(-1px);
+        }
+        .action-btn.btn-close:hover {
+            background-color: #ef4444;
+            color: white;
+        }
+        .main-viewer {
+            flex: 1;
+            position: relative;
+            background-color: #111827;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        .doc-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+        /* Loader styles for smooth micro-animations */
+        .loader-overlay {
+            position: absolute;
+            inset: 0;
+            background-color: #111827;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            z-index: 10;
+            transition: opacity 0.3s ease;
+        }
+        .spinner {
+            width: 45px;
+            height: 45px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid #6366f1;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .loading-text {
+            color: #9ca3af;
+            font-size: 0.85rem;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+        /* Responsive tweaks */
+        @media (max-width: 768px) {
+            .viewer-header {
+                padding: 10px;
+                gap: 5px;
+            }
+            .doc-meta {
+                display: none;
+            }
+            .nav-counter {
+                padding: 4px 8px;
+                font-size: 0.75rem;
+            }
+            .nav-btn {
+                padding: 6px 10px;
+                font-size: 0.75rem;
+            }
+        }
+        
+        /* Zoom floating toolbar styled beautifully */
+        .zoom-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(17, 24, 39, 0.85);
+            border: 1px solid rgba(75, 85, 99, 0.5);
+            border-radius: 30px;
+            padding: 6px 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 20;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+        .zoom-btn {
+            background: transparent;
+            border: none;
+            color: #d1d5db;
+            font-size: 0.9rem;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .zoom-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+        }
+        .zoom-text {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #ffffff;
+            min-width: 45px;
+            text-align: center;
+            user-select: none;
+        }
+
+        @media print {
+            .zoom-controls {
+                display: none !important;
+            }
+            .viewer-header {
+                display: none !important;
+            }
+            body, .main-viewer {
+                background-color: #ffffff !important;
+            }
+            .main-viewer {
+                padding: 0 !important;
+            }
+            img {
+                box-shadow: none !important;
+                max-width: 100% !important;
+                max-height: 100% !important;
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Control Bar -->
+    <header class="viewer-header">
+        <div class="doc-meta">
+            <span class="doc-title" title="{{ doc.description|default:'Attached Document' }}">{{ doc.description|default:"Attached Document" }}</span>
+            <span class="doc-sub">File: {{ file.file_number }} | Uploaded by {{ doc.uploaded_by.get_full_name }}</span>
+        </div>
+
+        <!-- Navigation Controls -->
+        <div class="nav-controls">
+            <a href="{% if prev_doc_id %}{% url 'document_viewer' file.id prev_doc_id %}{% else %}#{% endif %}" 
+               id="prevBtn" 
+               class="nav-btn {% if not prev_doc_id %}disabled{% endif %}"
+               title="Previous Document (Key: Left Arrow)">
+                <i class="fas fa-chevron-left"></i> Previous
+            </a>
+            
+            <span class="nav-counter" id="navCounter">{{ current_num }} / {{ total_num }}</span>
+            
+            <a href="{% if next_doc_id %}{% url 'document_viewer' file.id next_doc_id %}{% else %}#{% endif %}" 
+               id="nextBtn" 
+               class="nav-btn {% if not next_doc_id %}disabled{% endif %}"
+               title="Next Document (Key: Right Arrow)">
+                Next <i class="fas fa-chevron-right"></i>
+            </a>
+        </div>
+
+        <!-- Actions -->
+        <div class="action-controls">
+            <a href="{% url 'download_document' doc.id %}" class="action-btn" download title="Download file">
+                <i class="fas fa-download"></i> <span style="font-size: 0.85rem">Download</span>
+            </a>
+            <button onclick="printIframe()" class="action-btn" title="Print document">
+                <i class="fas fa-print"></i> <span style="font-size: 0.85rem">Print</span>
+            </button>
+            <button onclick="window.close()" class="action-btn btn-close" title="Close viewer">
+                <i class="fas fa-times-circle"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Container with Native Iframe / Image Reader -->
+    <main class="main-viewer">
+        <div class="loader-overlay" id="loaderOverlay">
+            <div class="spinner"></div>
+            <div class="loading-text">Loading Document Securely...</div>
+        </div>
+        
+        {% if is_image %}
+        <div id="imageContainer" style="width: 100%; height: 100%; display: flex; overflow: auto; padding: 20px;">
+            <img src="{% url 'download_document' doc.id %}" 
+                 style="max-width: 95%; max-height: 95%; object-fit: contain; box-shadow: 0 4px 20px rgba(0,0,0,0.5); border-radius: 4px; display: block; z-index: 5; transition: max-width 0.15s ease, max-height 0.15s ease, width 0.15s ease, height 0.15s ease; margin: auto;"
+                 alt="{{ doc.description }}"
+                 id="docImage"
+                 onload="initImageSize()">
+        </div>
+        
+        <!-- Floating Zoom Controls -->
+        <div class="zoom-controls">
+            <button onclick="zoomOut()" class="zoom-btn" title="Zoom Out"><i class="fas fa-search-minus"></i></button>
+            <span id="zoomPercent" class="zoom-text">100%</span>
+            <button onclick="zoomIn()" class="zoom-btn" title="Zoom In"><i class="fas fa-search-plus"></i></button>
+            <button onclick="zoomReset()" class="zoom-btn" title="Reset Fit"><i class="fas fa-compress"></i></button>
+        </div>
+        {% else %}
+        <iframe src="{% url 'download_document' doc.id %}" 
+                class="doc-frame" 
+                id="docFrame"
+                onload="hideLoader()">
+        </iframe>
+        {% endif %}
+    </main>
+
+    <!-- JS Logic for arrow navigation & printing -->
+    <script>
+        let initialWidth = 0;
+        let initialHeight = 0;
+        let zoomScale = 1.0;
+
+        function hideLoader() {
+            const loader = document.getElementById('loaderOverlay');
+            if (loader) {
+                loader.style.opacity = '0';
+                setTimeout(() => loader.style.display = 'none', 300);
+            }
+        }
+
+        function initImageSize() {
+            const img = document.getElementById('docImage');
+            if (img) {
+                initialWidth = img.clientWidth;
+                initialHeight = img.clientHeight;
+                
+                // Explicitly set dimensions to avoid jumpiness on resize
+                img.style.width = initialWidth + 'px';
+                img.style.height = initialHeight + 'px';
+                img.style.maxWidth = 'none';
+                img.style.maxHeight = 'none';
+            }
+            hideLoader();
+        }
+
+        function applyZoom() {
+            const img = document.getElementById('docImage');
+            const txt = document.getElementById('zoomPercent');
+            if (img && initialWidth > 0) {
+                img.style.width = (initialWidth * zoomScale) + 'px';
+                img.style.height = (initialHeight * zoomScale) + 'px';
+                
+                if (txt) {
+                    txt.textContent = Math.round(zoomScale * 100) + '%';
+                }
+            }
+        }
+
+        function zoomIn() {
+            if (zoomScale < 3.0) {
+                zoomScale += 0.25;
+                applyZoom();
+            }
+        }
+
+        function zoomOut() {
+            if (zoomScale > 0.25) {
+                zoomScale -= 0.25;
+                applyZoom();
+            }
+        }
+
+        function zoomReset() {
+            zoomScale = 1.0;
+            const img = document.getElementById('docImage');
+            const txt = document.getElementById('zoomPercent');
+            if (img) {
+                img.style.maxWidth = '95%';
+                img.style.maxHeight = '95%';
+                img.style.width = 'auto';
+                img.style.height = 'auto';
+                
+                setTimeout(() => {
+                    initialWidth = img.clientWidth;
+                    initialHeight = img.clientHeight;
+                    img.style.width = initialWidth + 'px';
+                    img.style.height = initialHeight + 'px';
+                    img.style.maxWidth = 'none';
+                    img.style.maxHeight = 'none';
+                }, 50);
+            }
+            if (txt) {
+                txt.textContent = '100%';
+            }
+        }
+        
+        // Print iframe content
+        function printIframe() {
+            const frame = document.getElementById('docFrame');
+            const img = document.getElementById('docImage');
+            if (frame) {
+                try {
+                    frame.contentWindow.focus();
+                    frame.contentWindow.print();
+                } catch (e) {
+                    // Fallback if browser blocks iframe access due to same-origin
+                    window.print();
+                }
+            } else if (img) {
+                window.print();
+            }
+        }
+
+        // Keyboard Arrow Navigation
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowLeft') {
+                const prevBtn = document.getElementById('prevBtn');
+                if (prevBtn && !prevBtn.classList.contains('disabled')) {
+                    prevBtn.click();
+                }
+            } else if (event.key === 'ArrowRight') {
+                const nextBtn = document.getElementById('nextBtn');
+                if (nextBtn && !nextBtn.classList.contains('disabled')) {
+                    nextBtn.click();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

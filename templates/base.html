@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MOP System{% endblock %}</title>
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #e2e2e2;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ══════════════════════════════
+           HEADER
+        ══════════════════════════════ */
+        .header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+            color: white;
+            padding: 0 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 64px;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 1100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Hamburger button — hidden on desktop */
+        .hamburger-btn {
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            padding: 8px;
+            transition: background 0.2s;
+            flex-shrink: 0;
+        }
+
+        .hamburger-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .hamburger-btn span {
+            display: block;
+            width: 22px;
+            height: 2px;
+            background: white;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+
+        /* Animated X when open */
+        .hamburger-btn.open span:nth-child(1) {
+            transform: translateY(7px) rotate(45deg);
+        }
+
+        .hamburger-btn.open span:nth-child(2) {
+            opacity: 0;
+            transform: scaleX(0);
+        }
+
+        .hamburger-btn.open span:nth-child(3) {
+            transform: translateY(-7px) rotate(-45deg);
+        }
+
+        .header-title h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .header-title p {
+            font-size: 0.78rem;
+            opacity: 0.85;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-info {
+            text-align: right;
+        }
+
+        .user-info .name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            line-height: 1.2;
+        }
+
+        .user-info .post {
+            font-size: 0.78rem;
+            opacity: 0.85;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-header {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 7px 14px;
+            border-radius: 7px;
+            text-decoration: none;
+            font-size: 0.82rem;
+            font-weight: 600;
+            transition: background 0.2s;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-header:hover {
+            background: rgba(255, 255, 255, 0.35);
+        }
+
+        .btn-header .btn-icon {
+            font-size: 1rem;
+            display: inline-block;
+        }
+
+        /* ══════════════════════════════
+           LAYOUT CONTAINER
+        ══════════════════════════════ */
+        .container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* ══════════════════════════════
+           SIDEBAR OVERLAY (mobile only)
+        ══════════════════════════════ */
+        .sidebar-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            z-index: 999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .sidebar-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* ══════════════════════════════
+           SIDEBAR
+        ══════════════════════════════ */
+        .sidebar {
+            width: 260px;
+            background: #182c46;
+            color: white;
+            padding: 0;
+            height: 100%;
+            overflow-y: auto;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        .sidebar-brand {
+            padding: 18px 22px;
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: white;
+            letter-spacing: 1.5px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(102, 126, 234, 0.15);
+        }
+
+        .sidebar nav {
+            display: flex;
+            flex-direction: column;
+            /* padding: 15px 0 10px 0; */
+        }
+
+        .nav-item {
+            padding: 12px 22px;
+            color: #b0bec5;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.92rem;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: white;
+            border-left-color: #667eea;
+        }
+
+        .nav-item.active {
+            background: rgba(102, 126, 234, 0.15);
+            color: #8fa8f5;
+            border-left-color: #667eea;
+            font-weight: 600;
+        }
+
+        .nav-item .nav-icon {
+            font-size: 1.1rem;
+            width: 22px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .nav-section {
+            padding: 18px 22px 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #546e7a;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        /* ══════════════════════════════
+           MAIN CONTENT
+        ══════════════════════════════ */
+        .main-content {
+            flex: 1;
+            padding: 28px 30px;
+            height: 100%;
+            overflow-y: auto;
+            background: #e2e2e2;
+            min-width: 0;
+        }
+
+        .main-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .main-content::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 4px;
+        }
+
+        /* ══════════════════════════════
+           MESSAGES / ALERTS
+        ══════════════════════════════ */
+        .messages {
+            margin-bottom: 20px;
+        }
+
+        .alert {
+            padding: 13px 18px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.92rem;
+        }
+
+        .alert-success {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            color: #2e7d32;
+        }
+
+        .alert-error {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            color: #c62828;
+        }
+
+        .alert-warning {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            color: #e65100;
+        }
+
+        .alert-info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            color: #1565c0;
+        }
+
+        /* ══════════════════════════════
+           TABLET  ≤ 1024px
+        ══════════════════════════════ */
+        @media (max-width: 1024px) {
+            .main-content {
+                padding: 22px 20px;
+            }
+        }
+
+        /* ══════════════════════════════
+           TABLET  ≤ 900px
+        ══════════════════════════════ */
+        @media (max-width: 900px) {
+            .user-info .post {
+                display: none;
+            }
+        }
+
+        /* ══════════════════════════════
+           MOBILE  ≤ 768px
+        ══════════════════════════════ */
+        @media (max-width: 768px) {
+
+            /* ── Body: switch to natural document flow ── */
+            body {
+                height: auto;
+                min-height: 100vh;
+                overflow-x: hidden;
+                overflow-y: auto;
+                display: flex;
+                flex-direction: column;
+            }
+
+            /* ── Header ── */
+            .header {
+                padding: 0 14px;
+                height: auto;
+                min-height: 56px;
+                flex-wrap: wrap;
+                gap: 6px;
+                padding-top: 8px;
+                padding-bottom: 8px;
+                position: sticky;
+                top: 0;
+                z-index: 1100;
+                flex-shrink: 0;
+            }
+
+            .header-left {
+                flex: 1;
+                min-width: 0;
+            }
+
+            .header-title h1 {
+                font-size: 1rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .header-title p {
+                display: none;
+            }
+
+            .header-actions {
+                gap: 6px;
+                flex-shrink: 0;
+            }
+
+            .btn-header {
+                padding: 6px 10px;
+                font-size: 0.78rem;
+                white-space: nowrap;
+            }
+
+            .btn-header .btn-text {
+                display: none;
+            }
+
+            .btn-header .btn-icon {
+                display: block;
+            }
+
+            .user-info {
+                display: none;
+            }
+
+            .hamburger-btn {
+                display: flex;
+            }
+
+            /* ── Container: natural stacking, no overflow trap ── */
+            .container {
+                flex: 1;
+                flex-direction: row;
+                overflow: visible;
+                position: relative;
+                /* sidebar is fixed overlay, so only main-content flows */
+            }
+
+            /* ── Sidebar: fixed off-screen drawer ── */
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100%;
+                width: 270px;
+                transform: translateX(-100%);
+                z-index: 1000;
+                box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+                padding-top: 64px;
+                /* Offset for the sticky header */
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            /* ── No persistent display block needed for overlay ── */
+
+            /* ── Main content: fills full width, natural height ── */
+            .main-content {
+                width: 100%;
+                padding: 18px 14px;
+                height: auto;
+                overflow: visible;
+                flex: 1;
+            }
+        }
+
+        /* ══════════════════════════════
+           SMALL PHONES  ≤ 480px
+        ══════════════════════════════ */
+        @media (max-width: 480px) {
+            .header-title h1 {
+                font-size: 0.9rem;
+            }
+
+            .header-actions {
+                gap: 4px;
+            }
+
+            .btn-header {
+                padding: 5px 8px;
+                font-size: 0.72rem;
+            }
+
+            .btn-header .btn-text {
+                display: none;
+            }
+
+            .btn-header .btn-icon {
+                margin: 0;
+                font-size: 1rem;
+            }
+
+            .main-content {
+                padding: 12px 10px;
+            }
+        }
+
+        /* ── Custom Confirmation Modal ── */
+        .conf-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+
+        .conf-modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .conf-modal {
+            background: white;
+            width: 90%;
+            max-width: 400px;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            overflow: hidden;
+            transform: scale(0.9);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .conf-modal-overlay.active .conf-modal {
+            transform: scale(1);
+        }
+
+        .conf-modal-header {
+            padding: 20px 24px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .conf-modal-icon {
+            width: 40px;
+            height: 40px;
+            background: #fee2e2;
+            color: #ef4444;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 1.2rem;
+        }
+
+        .conf-modal-title {
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 1.1rem;
+        }
+
+        .conf-modal-body {
+            padding: 24px;
+            color: #475569;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        .conf-modal-footer {
+            padding: 16px 24px;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .btn-conf {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            font-size: 0.9rem;
+        }
+
+        .btn-conf-cancel {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .btn-conf-cancel:hover {
+            background: #cbd5e1;
+        }
+
+        .btn-conf-confirm {
+            background: #ef4444;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2);
+        }
+
+        .btn-conf-confirm:hover {
+            background: #dc2626;
+            box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.3);
+        }
+
+        /* ── Language Toggle UI ── */
+        .lang-toggle-container {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 15px;
+            width: 100%;
+        }
+
+        .lang-toggle {
+            display: inline-flex;
+            background: #e2e8f0;
+            border-radius: 20px;
+            padding: 4px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .lang-opt {
+            padding: 5px 14px;
+            border-radius: 16px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            color: #64748b;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .lang-opt.active {
+            background: white;
+            color: #667eea;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    <!-- ── Header ── -->
+    <div class="header">
+        <div class="header-left">
+            <!-- Hamburger (mobile only) -->
+            <button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="header-title">
+                <h1>MOP File Tracking System</h1>
+                <p>Manual of Office Procedure</p>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="user-info">
+                <div class="name">{{ user.get_full_name|default:user.username }}</div>
+                <div class="post">{{ user.post.name }}</div>
+            </div>
+            <div class="header-actions">
+                <a href="{% url 'change_password' %}" class="btn-header" title="Change Password">
+                    <span class="btn-icon"><i class="fas fa-key"></i></span>
+                    <span class="btn-text">Change Password</span>
+                </a>
+                <a href="{% url 'logout' %}" class="btn-header" title="Logout">
+                    <span class="btn-icon"><i class="fas fa-power-off"></i></span>
+                    <span class="btn-text">Logout</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ── Sidebar Overlay (mobile backdrop) ── -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- ── Main Container ── -->
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <nav>
+                <a href="{% url 'dashboard' %}"
+                    class="nav-item {% if request.path == '/dashboard/' %}active{% endif %}">
+                    <span class="nav-icon"><i class="fas fa-tachometer-alt"></i></span> Dashboard
+                </a>
+                <a href="{% url 'inbox' %}" class="nav-item {% if '/inbox/' in request.path %}active{% endif %}">
+                    <span class="nav-icon"><i class="fas fa-inbox"></i></span> My Inbox
+                </a>
+                <a href="{% url 'messaging_inbox' %}"
+                    class="nav-item {% if '/messages/' in request.path %}active{% endif %}">
+                    <span class="nav-icon"><i class="fas fa-comments"></i></span> Messages
+                    <span id="navMessagingBadge" class="msg-nav-badge"
+                        style="{% if not messaging_unread_count %}display:none{% endif %};margin-left:auto;background:#f44336;color:white;font-size:0.7rem;font-weight:700;padding:2px 8px;border-radius:10px;">
+                        {% if messaging_unread_count %}{% if messaging_unread_count > 99 %}99+{% else %}{{ messaging_unread_count }}{% endif %}{% endif %}</span>
+                </a>
+                <a href="{% url 'sent_files' %}"
+                    class="nav-item {% if '/files/sent/' in request.path %}active{% endif %}">
+                    <span class="nav-icon"><i class="fas fa-paper-plane"></i></span> Sent Files
+                </a>
+                <a href="{% url 'track_file' %}" class="nav-item {% if '/track/' in request.path %}active{% endif %}">
+                    <span class="nav-icon"><i class="fas fa-search"></i></span> Track File
+                </a>
+                <a href="{% url 'approved_files' %}"
+                    class="nav-item {% if '/files/approved/' in request.path %}active{% endif %}">
+                    <span class="nav-icon"><i class="fas fa-check-circle"></i></span> Approved Files
+                </a>
+                <a href="{% url 'created_files' %}"
+                    class="nav-item {% if '/files/created/' in request.path %}active{% endif %}">
+                    <span class="nav-icon"><i class="fas fa-plus-square"></i></span> Files Created
+                </a>
+                <a href="{% url 'keep_in_files' %}"
+                    class="nav-item {% if '/files/keep-in-files/' in request.path %}active{% endif %}">
+                    <span class="nav-icon"><i class="fas fa-folder-open"></i></span> Keep in Files
+                </a>
+
+                <div class="nav-section">File Management</div>
+                <a href="{% url 'create_file' %}"
+                    class="nav-item {% if 'files/create' in request.path %}active{% endif %}">
+                    <span class="nav-icon"><i class="fas fa-plus-circle"></i></span> Create New File
+                </a>
+
+                {% if user.post.priority <= 1.5 %} <div class="nav-section">Administration
+    </div>
+    <a href="{% url 'summary_dashboard' %}"
+        class="nav-item {% if '/dashboard/summary/' in request.path %}active{% endif %}">
+        <span class="nav-icon"><i class="fas fa-chart-pie"></i></span> Summary Dashboard
+    </a>
+    {% if user.post.priority == 1 %}
+    <a href="{% url 'user_list' %}" class="nav-item {% if 'users' in request.path %}active{% endif %}">
+        <span class="nav-icon"><i class="fas fa-users-cog"></i></span> User Management
+    </a>
+    <a href="{% url 'post_list' %}" class="nav-item {% if 'posts' in request.path %}active{% endif %}">
+        <span class="nav-icon"><i class="fas fa-id-badge"></i></span> Post Management
+    </a>
+    <a href="{% url 'master_data_index' %}" class="nav-item {% if '/master-data/' in request.path %}active{% endif %}">
+        <span class="nav-icon"><i class="fas fa-database"></i></span> Master Data
+    </a>
+    {% endif %}
+    {% endif %}
+    </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                <i
+                    class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %}"></i>
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+    </div>
+
+    <!-- ── Confirmation Modal ── -->
+    <div class="conf-modal-overlay" id="confModalOverlay">
+        <div class="conf-modal">
+            <div class="conf-modal-header">
+                <div class="conf-modal-icon" id="confModalIcon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="conf-modal-title">Confirm Action</div>
+            </div>
+            <div class="conf-modal-body" id="confModalBody">
+                Are you sure you want to proceed with this action?
+            </div>
+            <div class="conf-modal-footer">
+                <button class="btn-conf btn-conf-cancel" id="confModalCancel">Cancel</button>
+                <button class="btn-conf btn-conf-confirm" id="confModalConfirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Hamburger / Sidebar Toggle Script ── -->
+    <script>
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+
+        function openSidebar() {
+            sidebar.classList.add('open');
+            overlay.classList.add('active');
+            hamburgerBtn.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSidebar() {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+            hamburgerBtn.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        hamburgerBtn.addEventListener('click', function () {
+            if (sidebar.classList.contains('open')) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        });
+
+        overlay.addEventListener('click', closeSidebar);
+
+        // Close sidebar when a nav link is clicked (mobile UX)
+        sidebar.querySelectorAll('.nav-item').forEach(function (link) {
+            link.addEventListener('click', function () {
+                if (window.innerWidth <= 768) {
+                    closeSidebar();
+                }
+            });
+        });
+
+        // ── Confirmation Modal Logic ──
+        const confOverlay = document.getElementById('confModalOverlay');
+        const confBody = document.getElementById('confModalBody');
+        const confCancel = document.getElementById('confModalCancel');
+        const confConfirm = document.getElementById('confModalConfirm');
+        const confIcon = document.getElementById('confModalIcon');
+        let pendingAction = null;
+
+        window.showConfirmModal = function (message, confirmUrl, isDangerous = true) {
+            confBody.textContent = message;
+            pendingAction = confirmUrl;
+
+            if (isDangerous) {
+                confIcon.style.background = '#fee2e2';
+                confIcon.style.color = '#ef4444';
+                confConfirm.style.background = '#ef4444';
+            } else {
+                confIcon.style.background = '#dcfce7';
+                confIcon.style.color = '#22c55e';
+                confConfirm.style.background = '#22c55e';
+            }
+
+            confOverlay.classList.add('active');
+        };
+
+        function closeConfModal() {
+            confOverlay.classList.remove('active');
+            pendingAction = null;
+        }
+
+        confCancel.addEventListener('click', closeConfModal);
+        confConfirm.addEventListener('click', function () {
+            if (pendingAction) {
+                window.location.href = pendingAction;
+            }
+        });
+
+        confOverlay.addEventListener('click', function (e) {
+            if (e.target === confOverlay) closeConfModal();
+        });
+
+        // ── Bilingual Typing (English / Malayalam) ──
+        document.addEventListener('DOMContentLoaded', function () {
+            // Exclude feature from administration sections
+            const currentPath = window.location.pathname;
+            if (currentPath.includes('/users') || currentPath.includes('/posts') || currentPath.includes('/master-data/')) {
+                return;
+            }
+
+            const textInputs = document.querySelectorAll('input[type="text"], textarea, input[type="search"]');
+            if (textInputs.length === 0) return;
+
+            // Only add toggle if there's a form container or we can find a good place
+            const chatPlaceholder = document.getElementById('chat-lang-toggle-placeholder');
+            const formContainer = document.querySelector('.form-container') || document.querySelector('form');
+            if (!chatPlaceholder && !formContainer) return;
+
+            let isMlActive = false;
+            const transliterationCache = {};
+
+            const toggleContainer = document.createElement('div');
+            toggleContainer.className = 'lang-toggle-container';
+            toggleContainer.innerHTML = `
+                <div class="lang-toggle">
+                    <span class="lang-opt active" id="lang-en" title="English">EN</span>
+                    <span class="lang-opt" id="lang-ml" title="Malayalam Phonetic (Press Space to transliterate)">ML</span>
+                </div>
+            `;
+
+            if (chatPlaceholder) {
+                chatPlaceholder.appendChild(toggleContainer);
+            } else if (formContainer.classList.contains('form-container')) {
+                formContainer.insertBefore(toggleContainer, formContainer.firstChild);
+            } else {
+                formContainer.parentNode.insertBefore(toggleContainer, formContainer);
+            }
+
+            const langEn = document.getElementById('lang-en');
+            const langMl = document.getElementById('lang-ml');
+
+            langEn.addEventListener('click', () => {
+                isMlActive = false;
+                langEn.classList.add('active');
+                langMl.classList.remove('active');
+            });
+
+            langMl.addEventListener('click', () => {
+                isMlActive = true;
+                langMl.classList.add('active');
+                langEn.classList.remove('active');
+            });
+
+            const getMatch = async (word) => {
+                if (!word) return null;
+                if (transliterationCache[word]) return transliterationCache[word];
+
+                try {
+                    const response = await fetch(`https://inputtools.google.com/request?text=${word}&itc=ml-t-i0-und&num=1&cp=0&cs=1&ie=utf-8&oe=utf-8&app=test`);
+                    const data = await response.json();
+                    if (data[0] === 'SUCCESS' && data[1] && data[1][0] && data[1][0][1] && data[1][0][1][0]) {
+                        const transliterated = data[1][0][1][0];
+                        transliterationCache[word] = transliterated;
+                        return transliterated;
+                    }
+                } catch (error) {
+                    console.error('Transliteration error:', error);
+                }
+                return null;
+            };
+
+            textInputs.forEach(input => {
+                input.addEventListener('keyup', async (e) => {
+                    if (!isMlActive) return;
+
+                    if (e.code === 'Space' || e.code === 'Enter') {
+                        const cursorPosition = input.selectionStart;
+                        const textBeforeCursor = input.value.substring(0, cursorPosition);
+
+                        // Match alphabetical word possibly followed by punctuation and whitespace
+                        const match = textBeforeCursor.match(/([a-zA-Z]+)([^a-zA-Z]*[\s\n]+)$/);
+
+                        if (match) {
+                            const wordToTransliterate = match[1];
+                            const trailingChars = match[2];
+                            const wordStartPos = cursorPosition - wordToTransliterate.length - trailingChars.length;
+
+                            const transliterated = await getMatch(wordToTransliterate);
+                            if (transliterated) {
+                                const originalValue = input.value;
+                                const newValue = originalValue.substring(0, wordStartPos) +
+                                    transliterated +
+                                    trailingChars +
+                                    originalValue.substring(cursorPosition);
+
+                                input.value = newValue;
+
+                                const newCursorPos = wordStartPos + transliterated.length + trailingChars.length;
+                                input.setSelectionRange(newCursorPos, newCursorPos);
+
+                                input.dispatchEvent(new Event('input', { bubbles: true }));
+                            }
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit User - MOP System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        margin-bottom: 30px;
+    }
+
+    .page-header h2 {
+        color: #333;
+        font-size: 2rem;
+        margin-bottom: 5px;
+    }
+
+    .user-info-box {
+        background: #f5f7fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    .user-info-box p {
+        margin: 5px 0;
+        color: #666;
+    }
+
+    .user-info-box strong {
+        color: #333;
+    }
+
+    .form-container {
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        max-width: 700px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        color: #333;
+        font-weight: 600;
+        margin-bottom: 8px;
+        font-size: 0.95rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.3s ease;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+
+    .form-check {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .form-check-input {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+
+    .help-text {
+        font-size: 0.85rem;
+        color: #666;
+        margin-top: 5px;
+    }
+
+    .btn-submit {
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+        color: white;
+        padding: 12px 30px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.3s ease;
+    }
+
+    .btn-submit:hover {
+        transform: translateY(-2px);
+    }
+
+    .btn-cancel {
+        background: #f5f5f5;
+        color: #666;
+        padding: 12px 30px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        margin-left: 10px;
+    }
+
+    .btn-cancel:hover {
+        background: #e0e0e0;
+    }
+
+    .error {
+        color: #f44336;
+        font-size: 0.85rem;
+        margin-top: 5px;
+    }
+
+    /* ── Mobile Responsive ── */
+    @media (max-width: 768px) {
+        .page-header h2 {
+            font-size: 1.5rem;
+        }
+
+        .form-container {
+            padding: 20px 15px;
+            max-width: 100%;
+        }
+
+        .btn-submit,
+        .btn-cancel {
+            display: block;
+            width: 100%;
+            margin-left: 0;
+            margin-bottom: 10px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Edit User</h2>
+    <p>Update user information</p>
+</div>
+
+<div class="user-info-box">
+    <p><strong>User ID:</strong> {{ user_obj.user_id }}</p>
+    <p><strong>Username:</strong> {{ user_obj.username }}</p>
+    <p><strong>Created:</strong> {{ user_obj.created_at|date:"M d, Y" }}</p>
+</div>
+
+<div class="form-container">
+    <form method="POST">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="{{ form.first_name.id_for_label }}">First Name *</label>
+            {{ form.first_name }}
+            {% if form.first_name.errors %}
+            <div class="error">{{ form.first_name.errors.0 }}</div>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.last_name.id_for_label }}">Last Name</label>
+            {{ form.last_name }}
+            {% if form.last_name.errors %}
+            <div class="error">{{ form.last_name.errors.0 }}</div>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.post.id_for_label }}">Official Post *</label>
+            {{ form.post }}
+            {% if form.post.errors %}
+            <div class="error">{{ form.post.errors.0 }}</div>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.email.id_for_label }}">Email</label>
+            {{ form.email }}
+            {% if form.email.errors %}
+            <div class="error">{{ form.email.errors.0 }}</div>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.mobile.id_for_label }}">Mobile</label>
+            {{ form.mobile }}
+            {% if form.mobile.errors %}
+            <div class="error">{{ form.mobile.errors.0 }}</div>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <div class="form-check">
+                {{ form.is_active }}
+                <label for="{{ form.is_active.id_for_label }}">Active</label>
+            </div>
+            {% if form.is_active.help_text %}
+            <div class="help-text">{{ form.is_active.help_text }}</div>
+            {% endif %}
+        </div>
+
+        <div style="margin-top: 30px;">
+            <button type="submit" class="btn-submit">Update User</button>
+            <a href="{% url 'user_list' %}" class="btn-cancel">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,375 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit File - MOP System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        margin-bottom: 30px;
+    }
+
+    .page-header h2 {
+        color: #333;
+        font-size: 2rem;
+        margin-bottom: 5px;
+    }
+
+    .form-container {
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        max-width: 800px;
+        margin: 0 auto;
+        /* Centered */
+    }
+
+    .form-section {
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .form-section:last-child {
+        border-bottom: none;
+    }
+
+    .section-title {
+        color: #667eea;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group.full-width {
+        grid-column: 1 / -1;
+    }
+
+    .form-group label {
+        display: block;
+        color: #333;
+        font-weight: 600;
+        margin-bottom: 8px;
+        font-size: 0.95rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.3s ease;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 100px;
+    }
+
+    .help-text {
+        font-size: 0.85rem;
+        color: #666;
+        margin-top: 5px;
+    }
+
+    .btn-submit {
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+        color: white;
+        padding: 12px 30px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.3s ease;
+    }
+
+    .btn-submit:hover {
+        transform: translateY(-2px);
+    }
+
+    .btn-cancel {
+        background: #f5f5f5;
+        color: #666;
+        padding: 12px 30px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        margin-left: 10px;
+    }
+
+    .btn-cancel:hover {
+        background: #e0e0e0;
+    }
+
+    input[type=file] {
+        width: 100%;
+        padding: 8px;
+        border: 2px dashed #e0e0e0;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+
+    input[type=file]:hover {
+        border-color: #667eea;
+        background: #f8f9ff;
+    }
+
+    /* ── Mobile & Tablet Responsive ── */
+    @media (max-width: 768px) {
+        .page-header h2 {
+            font-size: 1.5rem;
+        }
+
+        .form-container {
+            padding: 20px 15px;
+            max-width: 100%;
+            margin: 0;
+        }
+
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .form-group.full-width {
+            grid-column: 1;
+        }
+
+        .btn-submit,
+        .btn-cancel {
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            margin-left: 0;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        /* Override the right-aligned action row */
+        div[style*="text-align: right"] {
+            text-align: left !important;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .form-container {
+            padding: 15px 10px;
+        }
+
+        .form-control {
+            font-size: 0.95rem;
+        }
+    }
+
+    .document-list {
+        list-style: none;
+        padding: 0;
+        margin-top: 15px;
+    }
+
+    .document-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px;
+        background: #f8fafc;
+        border: 1px solid #edf2f7;
+        border-radius: 8px;
+        margin-bottom: 10px;
+    }
+
+    .doc-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .doc-icon {
+        color: #667eea;
+        font-size: 1.2rem;
+    }
+
+    .doc-name {
+        font-weight: 500;
+        color: #4a5568;
+    }
+
+    .btn-delete-doc {
+        color: #e53e3e;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 5px;
+        transition: color 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .btn-delete-doc:hover {
+        color: #9b2c2c;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header" style="text-align: center;">
+    <h2>Edit File: {{ file.file_number }}</h2>
+    <p>Update file details</p>
+</div>
+
+<div class="form-container">
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+            {% for error in form.non_field_errors %}
+            {{ error }}
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="form-section">
+            <h3 class="section-title"><i class="fas fa-file-alt"></i> Core Information</h3>
+
+            <div class="form-group full-width">
+                <label for="{{ form.subject.id_for_label }}">Subject</label>
+                {{ form.subject }}
+                {% if form.subject.errors %}
+                <div class="error">{{ form.subject.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="{{ form.department.id_for_label }}">Department</label>
+                    {{ form.department }}
+                    {% if form.department.errors %}
+                    <div class="error">{{ form.department.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.document_type.id_for_label }}">Document Type</label>
+                    {{ form.document_type }}
+                    {% if form.document_type.errors %}
+                    <div class="error">{{ form.document_type.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.document_origin.id_for_label }}">Origin</label>
+                    {{ form.document_origin }}
+                    {% if form.document_origin.errors %}
+                    <div class="error">{{ form.document_origin.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.document_priority.id_for_label }}">Priority</label>
+                    {{ form.document_priority }}
+                    {% if form.document_priority.errors %}
+                    <div class="error">{{ form.document_priority.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3 class="section-title"><i class="fas fa-paperclip"></i> Content & Attachments</h3>
+
+            <div class="form-group full-width">
+                <label for="{{ form.remarks.id_for_label }}">Initial Remarks (Review/Update)</label>
+                {{ form.remarks }}
+                {% if form.remarks.errors %}
+                <div class="error">{{ form.remarks.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group full-width">
+                <label for="{{ form.attachment.id_for_label }}">Add New Attachment (Optional)</label>
+                {{ form.attachment }}
+                <div class="help-text">Max file size: 200KB (Documents or Compressed files). Uploading a file here will
+                    add it to the list of existing
+                    attachments.</div>
+                {% if form.attachment.errors %}
+                <div class="error">{{ form.attachment.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            {% if documents %}
+            <div class="form-group full-width">
+                <label>Existing Attachments</label>
+                <div class="document-list">
+                    {% for doc in documents %}
+                    <div class="document-item">
+                        <div class="doc-info">
+                            <div class="doc-icon"><i class="fas fa-file-pdf"></i></div>
+                            <span class="doc-name">{{ doc.description|default:"Document" }}</span>
+                            <a href="{% url 'document_viewer' file.id doc.id %}" target="doc_viewer"
+                                style="margin-left: 10px; font-size: 0.85rem; color: #667eea; text-decoration: none;">View</a>
+                        </div>
+                        <a href="{% url 'delete_document' doc.id %}" class="btn-delete-doc"
+                            onclick="return confirm('Are you sure you want to remove this document? This cannot be undone.')">
+                            <i class="fas fa-trash-alt"></i> Remove
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div style="margin-top: 30px; text-align: right;">
+            <a href="{% url 'file_detail' file.id %}" class="btn-cancel">Cancel</a>
+            <button type="submit" class="btn-submit">Update File</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.querySelector('form').addEventListener('submit', function (e) {
+        const attachment = document.querySelector('input[name="attachment"]');
+        if (attachment && attachment.files.length > 0) {
+            for (let i = 0; i < attachment.files.length; i++) {
+                const fileSize = attachment.files[i].size / 1024; // KB
+                if (fileSize > 200) {
+                    e.preventDefault();
+                    alert(`File "${attachment.files[i].name}" exceeds the 200KB limit.`);
+                    return;
+                }
+            }
+        }
+    });
+
+</script>
+{% endblock %}

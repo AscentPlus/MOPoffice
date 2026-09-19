@@ -1,0 +1,1389 @@
+{% extends 'base.html' %}
+
+{% block title %}Summary Dashboard - MOP System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        margin-bottom: 8px;
+    }
+
+    .page-header h2 {
+        color: #333;
+        font-size: 1.6rem;
+        margin-bottom: 2px;
+        font-weight: 700;
+    }
+
+    /* Split-Pane Layout */
+    .summary-container {
+        display: flex;
+        gap: 15px;
+        align-items: stretch;
+        margin-top: 8px;
+        min-height: 440px;
+        height: 480px;
+        overflow: hidden;
+    }
+
+    /* Processing Files Section */
+    .processing-container {
+        margin-top: 25px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+        padding: 16px 20px;
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 30px;
+    }
+
+    .processing-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+        padding-bottom: 14px;
+        border-bottom: 2px solid #f1f5f9;
+        margin-bottom: 12px;
+    }
+
+    .processing-title-group {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .processing-title-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(129, 140, 248, 0.2) 100%);
+        color: #4f46e5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+    }
+
+    .processing-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .processing-subtitle {
+        font-size: 0.78rem;
+        color: #64748b;
+        margin: 2px 0 0 0;
+    }
+
+    .processing-count-badge {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #4338ca;
+        background: #e0e7ff;
+        border: 1px solid #c7d2fe;
+        padding: 3px 10px;
+        border-radius: 12px;
+    }
+
+    .processing-search-box {
+        position: relative;
+        width: 320px;
+    }
+
+    .processing-table-wrapper {
+        max-height: 480px;
+        overflow-y: auto;
+    }
+
+    /* Left Sidebar: User Selector (Default: Expanded, 250px) */
+    .user-sidebar {
+        flex: 0 0 250px;
+        width: 250px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        transition: flex 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+            width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+            box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden;
+        position: relative;
+    }
+
+    /* Collapsed State (When user is selected) */
+    .user-sidebar.collapsed {
+        flex: 0 0 58px;
+        width: 58px;
+        padding: 12px 6px;
+    }
+
+    /* Expand collapsed sidebar on Hover */
+    .user-sidebar.collapsed:hover {
+        flex: 0 0 250px;
+        width: 250px;
+        padding: 12px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        z-index: 100;
+    }
+
+    .search-box {
+        position: relative;
+        margin-bottom: 10px;
+        flex-shrink: 0;
+        width: 226px;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 8px 10px 8px 32px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        transition: opacity 0.2s ease, border-color 0.2s ease;
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+        font-size: 0.85rem;
+        z-index: 2;
+    }
+
+    /* Collapsed state styling for Search Input */
+    .user-sidebar.collapsed .search-input {
+        opacity: 0;
+        border-color: transparent;
+        pointer-events: none;
+    }
+
+    /* Hover expanded state for Collapsed Search Input */
+    .user-sidebar.collapsed:hover .search-input {
+        opacity: 1;
+        border-color: #cbd5e1;
+        pointer-events: auto;
+    }
+
+    .users-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        flex: 1;
+        overflow-y: auto;
+        padding-right: 2px;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .users-list::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Custom scrollbar for sleeker aesthetics */
+    .table-responsive-container::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    .table-responsive-container::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .table-responsive-container::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+    }
+
+    .table-responsive-container::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+
+    .user-item {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 8px 10px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: background 0.15s ease, border-color 0.15s ease;
+        flex-shrink: 0;
+        width: 226px;
+    }
+
+    .user-item:hover {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+    }
+
+    .user-item.active {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+        border-color: #667eea;
+        color: #4a5568;
+    }
+
+    .user-item.active .user-name {
+        color: #5a67d8;
+        font-weight: 700;
+    }
+
+    /* Avatars always available, left-docked statically */
+    .user-avatar {
+        display: flex;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #e2e8f0;
+        color: #475569;
+        font-weight: 700;
+        font-size: 0.8rem;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .user-item.active .user-avatar {
+        background: #667eea;
+        color: white;
+    }
+
+    .user-info-meta {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        flex-grow: 1;
+        transition: opacity 0.2s ease;
+    }
+
+    /* Hide text details and badge count in collapsed state unless hovered */
+    .user-sidebar.collapsed .user-info-meta,
+    .user-sidebar.collapsed .user-badge {
+        display: none;
+        opacity: 0;
+    }
+
+    .user-sidebar.collapsed:hover .user-info-meta,
+    .user-sidebar.collapsed:hover .user-badge {
+        display: flex;
+        opacity: 1;
+    }
+
+    /* Align items left when collapsed (since overflow will clip the right side) */
+    .user-sidebar.collapsed .user-item {
+        justify-content: flex-start;
+        background: transparent;
+        border-color: transparent;
+    }
+
+
+
+    .user-sidebar.collapsed:hover .user-item {
+        background: #f8fafc !important;
+        border: 1px solid #e2e8f0 !important;
+    }
+
+    .user-sidebar.collapsed:hover .user-item.active {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%) !important;
+        border-color: #0f172a !important;
+    }
+
+
+
+    .user-name {
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: #334155;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        transition: color 0.15s ease;
+    }
+
+    .user-designation {
+        font-size: 0.75rem;
+        color: #64748b;
+        margin-top: 1px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .user-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #e2e8f0;
+        color: #475569;
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 12px;
+        min-width: 25px;
+        white-space: nowrap;
+        margin-left: auto;
+        transition: all 0.15s ease;
+    }
+
+    .user-item.active .user-badge {
+        background: #667eea;
+        color: white;
+    }
+
+    .user-badge.badge-zero {
+        background: #f8fafc;
+        color: #94a3b8;
+        border: 1px dashed #e2e8f0;
+    }
+
+    .user-badge.badge-has-files {
+        background: #ffedd5;
+        color: #ea580c;
+        border: 1px solid #fed7aa;
+    }
+
+    .user-item.active .user-badge.badge-has-files {
+        background: #ea580c;
+        color: white;
+        border-color: #ea580c;
+    }
+
+    /* Right Side: Details View */
+    .detail-pane {
+        flex: 1;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+        padding: 15px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .pane-title {
+        color: #1e293b;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #f1f5f9;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+    }
+
+    .pane-title-badge {
+        font-size: 0.75rem;
+        color: #667eea;
+        background: rgba(102, 126, 234, 0.08);
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-weight: 600;
+    }
+
+    .back-btn {
+        border: 1px solid #cbd5e1;
+        background: white;
+        border-radius: 4px;
+        padding: 4px 10px;
+        font-size: 0.78rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: #475569;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+
+    .back-btn:hover {
+        background: #f1f5f9 !important;
+        border-color: #cbd5e1 !important;
+        color: #1e293b !important;
+    }
+
+    /* Scrollable table container class */
+    .table-responsive-container {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: auto;
+        margin-top: 5px;
+        border-radius: 4px;
+        border: 1px solid #f1f5f9;
+    }
+
+    /* Data Table */
+    .file-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .file-table th {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        text-align: left;
+        padding: 10px 8px;
+        background: #f8fafc;
+        color: #475569;
+        font-weight: 600;
+        font-size: 0.82rem;
+        border-bottom: 2px solid #e2e8f0;
+    }
+
+    .file-table td {
+        padding: 10px 8px;
+        border-bottom: 1px solid #f1f5f9;
+        color: #475569;
+        font-size: 0.85rem;
+    }
+
+    .file-table tr:hover {
+        background: #f8fafc;
+    }
+
+    .file-num-link {
+        color: #667eea;
+        font-weight: 600;
+        text-decoration: none;
+        transition: color 0.15s ease;
+    }
+
+    .file-num-link:hover {
+        text-decoration: underline;
+        color: #5a67d8;
+    }
+
+    .badge-status-pill {
+        display: inline-block;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        border: 1px solid transparent;
+        white-space: nowrap;
+    }
+
+    .badge-status-pending {
+        background: #eff6ff;
+        color: #1d4ed8;
+        border-color: #bfdbfe;
+    }
+
+    .badge-status-returned {
+        background: #fffbdf;
+        color: #b45309;
+        border-color: #fde68a;
+    }
+
+    .badge-status-approved {
+        background: #f0fdf4;
+        color: #15803d;
+        border-color: #bbf7d0;
+    }
+
+    .badge-status-rejected {
+        background: #fef2f2;
+        color: #b91c1c;
+        border-color: #fecaca;
+    }
+
+    .badge-status-processing {
+        background: #e0e7ff;
+        color: #4338ca;
+        border-color: #c7d2fe;
+    }
+
+    .priority-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        margin-top: 3px;
+        letter-spacing: 0.2px;
+        border: 1px solid transparent;
+        white-space: nowrap;
+    }
+
+    .priority-badge.priority-very-urgent {
+        background: #fef2f2;
+        color: #b91c1c;
+        border-color: #fecaca;
+    }
+
+    .priority-badge.priority-urgent {
+        background: #fff7ed;
+        color: #c2410c;
+        border-color: #ffedd5;
+    }
+
+    .priority-badge.priority-normal {
+        background: #f0fdf4;
+        color: #15803d;
+        border-color: #bbf7d0;
+    }
+
+    .priority-badge.priority-gray {
+        background: #f8fafc;
+        color: #64748b;
+        border-color: #cbd5e1;
+    }
+
+    .remark-text {
+        font-size: 0.8rem;
+        color: #64748b;
+        line-height: 1.4;
+        display: block;
+    }
+
+    /* States styling */
+    .empty-state {
+        text-align: center;
+        padding: 40px 10px;
+        color: #64748b;
+        margin: auto;
+    }
+
+    .empty-state i {
+        font-size: 2.2rem;
+        color: #94a3b8;
+        margin-bottom: 12px;
+    }
+
+    .empty-state h3 {
+        font-size: 1.05rem;
+        margin-bottom: 4px;
+        font-weight: 600;
+    }
+
+    .empty-state p {
+        font-size: 0.82rem;
+    }
+
+    .loader-box {
+        text-align: center;
+        padding: 40px 10px;
+        color: #64748b;
+        margin: auto;
+    }
+
+    .loader-spinner {
+        color: #667eea;
+        font-size: 2rem;
+        margin-bottom: 12px;
+    }
+
+    .loader-box h3 {
+        font-size: 1.05rem;
+        margin-bottom: 4px;
+        font-weight: 600;
+    }
+
+    .loader-box p {
+        font-size: 0.82rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+        .summary-container {
+            flex-direction: column;
+            gap: 15px;
+            height: auto !important;
+            overflow: visible !important;
+        }
+
+        .user-sidebar {
+            flex: none !important;
+            width: 100% !important;
+            height: auto !important;
+        }
+
+        .search-box {
+            width: 100% !important;
+        }
+
+        .user-item {
+            width: 100% !important;
+        }
+
+        .users-list {
+            height: auto !important;
+            max-height: 250px;
+            overflow-y: auto !important;
+        }
+
+        .user-sidebar.collapsed {
+            flex: none !important;
+            width: 100% !important;
+            padding: 12px !important;
+        }
+
+        /* Allow search box, metadata, badges to remain visible on smaller screens */
+        .user-sidebar.collapsed .search-box,
+        .user-sidebar.collapsed .user-info-meta,
+        .user-sidebar.collapsed .user-badge {
+            display: flex !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            height: auto !important;
+            margin-bottom: 10px !important;
+        }
+
+        .user-sidebar.collapsed .search-input {
+            width: 100% !important;
+            opacity: 1 !important;
+            padding: 8px 10px 8px 32px !important;
+            border-color: #cbd5e1 !important;
+            pointer-events: auto !important;
+        }
+
+        .user-sidebar.collapsed .search-icon {
+            left: 10px !important;
+            transform: translateY(-50%) !important;
+        }
+
+        .user-sidebar.collapsed .user-item {
+            justify-content: flex-start !important;
+            padding: 8px 10px !important;
+            gap: 10px !important;
+            background: #f8fafc !important;
+            border: 1px solid #e2e8f0 !important;
+        }
+
+        .detail-pane {
+            width: 100% !important;
+            height: auto !important;
+        }
+
+        .table-responsive-container {
+            max-height: 400px;
+            overflow-y: auto !important;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .summary-container {
+            flex-direction: row !important;
+            height: calc(100vh - 120px) !important;
+            overflow: hidden !important;
+            margin-top: 5px;
+        }
+
+        /* Initial state: show sidebar, hide details */
+        #userSidebar:not(.collapsed) {
+            display: flex !important;
+            width: 100% !important;
+            height: 100% !important;
+            flex: 1 !important;
+        }
+
+        #userSidebar:not(.collapsed)+#detailPanel {
+            display: none !important;
+        }
+
+        /* User selected: hide sidebar, show details */
+        #userSidebar.collapsed {
+            display: none !important;
+        }
+
+        #userSidebar.collapsed+#detailPanel {
+            display: flex !important;
+            width: 100% !important;
+            height: 100% !important;
+            flex: 1 !important;
+        }
+
+        #detailPanel {
+            height: 100% !important;
+            width: 100% !important;
+        }
+
+        .table-responsive-container {
+            max-height: calc(100vh - 220px) !important;
+            height: auto !important;
+        }
+
+        .users-list {
+            max-height: none !important;
+            height: 100% !important;
+        }
+    }
+
+    /* Print Styles */
+    .print-only {
+        display: none;
+    }
+
+    @media print {
+
+        /* General layout overrides for print */
+        body {
+            background: white !important;
+            color: black !important;
+            height: auto !important;
+            min-height: 100vh !important;
+            overflow: visible !important;
+            font-size: 11pt !important;
+        }
+
+        /* Hide layout wrappers from base.html */
+        .header,
+        .sidebar,
+        .sidebar-overlay,
+        #hamburgerBtn,
+        .no-print,
+        .back-btn {
+            display: none !important;
+        }
+
+        .main-content {
+            padding: 0 !important;
+            background: transparent !important;
+            overflow: visible !important;
+            height: auto !important;
+        }
+
+        .container {
+            display: block !important;
+            height: auto !important;
+            overflow: visible !important;
+        }
+
+        /* Specific blocks based on print mode */
+        body.print-all-users .summary-container,
+        body.print-all-users .processing-container,
+        body.print-all-users .page-header {
+            display: none !important;
+        }
+
+        body.print-all-users #printAllSection {
+            display: block !important;
+        }
+
+        body.print-processing-files .summary-container,
+        body.print-processing-files .processing-container,
+        body.print-processing-files .page-header {
+            display: none !important;
+        }
+
+        body.print-processing-files #printProcessingSection {
+            display: block !important;
+        }
+
+        body.print-user-details .summary-container {
+            display: block !important;
+            height: auto !important;
+            overflow: visible !important;
+            margin: 0 !important;
+        }
+
+        body.print-user-details .user-sidebar,
+        body.print-user-details .page-header,
+        body.print-user-details .print-only,
+        body.print-user-details .processing-container {
+            display: none !important;
+        }
+
+        body.print-user-details .detail-pane {
+            display: flex !important;
+            box-shadow: none !important;
+            border: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            overflow: visible !important;
+            height: auto !important;
+            width: 100% !important;
+        }
+
+        body.print-user-details .table-responsive-container {
+            overflow: visible !important;
+            max-height: none !important;
+            height: auto !important;
+        }
+
+        /* Print friendly tables */
+        .file-table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            page-break-inside: auto !important;
+        }
+
+        .file-table tr {
+            page-break-inside: avoid !important;
+            page-break-after: auto !important;
+        }
+
+        .file-table th,
+        .file-table td {
+            border: 1px solid #cbd5e1 !important;
+            padding: 8px !important;
+            color: #000 !important;
+            text-align: left !important;
+        }
+
+        .file-table th {
+            background-color: #f8fafc !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            font-weight: bold !important;
+            position: static !important;
+        }
+
+        .file-num-link {
+            color: #000 !important;
+            text-decoration: none !important;
+            font-weight: bold !important;
+        }
+
+        .badge-status-pill {
+            border: 1px solid #cbd5e1 !important;
+            background: transparent !important;
+            color: #000 !important;
+            padding: 2px 4px !important;
+            text-shadow: none !important;
+        }
+
+        .priority-badge {
+            border: 1px solid #cbd5e1 !important;
+            background: transparent !important;
+            color: #000 !important;
+            display: inline-block !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+            <h2>Summary Dashboard</h2>
+            <!-- <button onclick="printAllUsers()" class="back-btn no-print" style="background: #edf2f7; border-color: #cbd5e1; font-size: 0.85rem; padding: 6px 12px;">
+                <i class="fas fa-print"></i> Print All Users Summary
+            </button> -->
+        </div>
+        <span
+            style="background: #1e3a8a; color: white; font-size: 0.68rem; padding: 3px 8px; border-radius: 4px; font-weight: bold; text-transform: uppercase;">Admin
+            Only</span>
+    </div>
+</div>
+
+<!-- Print-only container for printing all users summary as a clean table -->
+<div id="printAllSection" class="print-only">
+    <div style="text-align: center; margin-bottom: 25px; border-bottom: 2px solid #333; padding-bottom: 10px;">
+        <h1 style="margin: 0; font-size: 1.8rem; font-weight: bold; color: #1a202c;">MOP</h1>
+        <h2 style="margin: 5px 0 0 0; font-size: 1.2rem; color: #4a5568;">Users Pending Files Summary</h2>
+        <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #718096;">Generated on: {% now "d-m-Y H:i" %}</p>
+    </div>
+    <table class="file-table" style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr>
+                <th
+                    style="width: 10%; border: 1px solid #cbd5e1; padding: 8px; background-color: #f8fafc; font-weight: bold;">
+                    Sl. No.</th>
+                <th
+                    style="width: 45%; border: 1px solid #cbd5e1; padding: 8px; background-color: #f8fafc; font-weight: bold;">
+                    User Name</th>
+                <th
+                    style="width: 30%; border: 1px solid #cbd5e1; padding: 8px; background-color: #f8fafc; font-weight: bold;">
+                    Designation</th>
+                <th
+                    style="width: 15%; border: 1px solid #cbd5e1; padding: 8px; background-color: #f8fafc; font-weight: bold; text-align: center;">
+                    Pending Files</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in users %}
+            <tr>
+                <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center;">{{ forloop.counter }}</td>
+                <td style="border: 1px solid #cbd5e1; padding: 8px; font-weight: 600;">
+                    {{ u.get_full_name|default:u.username }}</td>
+                <td style="border: 1px solid #cbd5e1; padding: 8px;">{{ u.post.name }}</td>
+                <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; font-weight: bold;">
+                    {{ u.total_pending }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Print-only container for printing external/government processing files -->
+<div id="printProcessingSection" class="print-only">
+    <div style="text-align: center; margin-bottom: 25px; border-bottom: 2px solid #333; padding-bottom: 10px;">
+        <h1 style="margin: 0; font-size: 1.8rem; font-weight: bold; color: #1a202c;">MOP</h1>
+        <h2 style="margin: 5px 0 0 0; font-size: 1.2rem; color: #4a5568;">Files Under External / Government Processing
+            Summary </h2>
+        <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #718096;">Generated on: {% now "d-m-Y H:i" %}</p>
+    </div>
+    {% if processing_files %}
+    <table class="file-table" style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr>
+                <th
+                    style="width: 5%; border: 1px solid #cbd5e1; padding: 8px; background-color: #f8fafc; font-weight: bold; text-align: center;">
+                    Sl. No.</th>
+                <th
+                    style="width: 18%; border: 1px solid #cbd5e1; padding: 8px; background-color: #f8fafc; font-weight: bold;">
+                    File No.</th>
+                <th
+                    style="width: 27%; border: 1px solid #cbd5e1; padding: 8px; background-color: #f8fafc; font-weight: bold;">
+                    Subject</th>
+                <th
+                    style="width: 10%; border: 1px solid #cbd5e1; padding: 8px; background-color: #f8fafc; font-weight: bold;">
+                    Type</th>
+                <th
+                    style="width: 18%; border: 1px solid #cbd5e1; padding: 8px; background-color: #f8fafc; font-weight: bold;">
+                    Sent By</th>
+                <th
+                    style="width: 22%; border: 1px solid #cbd5e1; padding: 8px; background-color: #f8fafc; font-weight: bold;">
+                    Narration / Remarks</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in processing_files %}
+            <tr>
+                <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center;">{{ forloop.counter }}</td>
+                <td style="border: 1px solid #cbd5e1; padding: 8px;">
+                    <div style="font-weight: 600;">{{ item.file.file_number }}</div>
+                    <div style="font-size: 0.75rem; color: #4b5563; margin-top: 3px;">
+                        Created: {{ item.file.created_at|date:"d-m-Y" }}
+                    </div>
+                </td>
+                <td style="border: 1px solid #cbd5e1; padding: 8px;">{{ item.file.subject }}</td>
+                <td style="border: 1px solid #cbd5e1; padding: 8px;">{{ item.file.document_type.name|default:"N/A" }}
+                </td>
+                <td style="border: 1px solid #cbd5e1; padding: 8px;">
+                    <div>
+                        {% if item.sent_by_user %}{{ item.sent_by_user.get_full_name|default:item.sent_by_user.username
+                        }}{% endif %}
+                        {% if item.sent_by_post %}({{ item.sent_by_post.name }}){% endif %}
+                    </div>
+                    {% if item.sent_at %}
+                    <div style="font-size: 0.75rem; color: #4b5563; margin-top: 3px;">
+                        Sent: {{ item.sent_at|date:"d-m-Y H:i" }}
+                    </div>
+                    {% endif %}
+                </td>
+                <td style="border: 1px solid #cbd5e1; padding: 8px;">{{ item.narration }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="text-align: center; color: #718096; margin-top: 20px;">No files are currently in external or government
+        processing.</p>
+    {% endif %}
+</div>
+
+<div class="summary-container">
+    <!-- User List Panel -->
+    <div class="user-sidebar" id="userSidebar">
+        <div class="search-box">
+            <span class="search-icon"><i class="fas fa-search"></i></span>
+            <input type="text" id="userSelectorQuery" class="search-input" placeholder="Search user..."
+                onkeyup="filterUsers()">
+        </div>
+
+        <div class="users-list" id="usersContainer">
+            {% for u in users %}
+            <div class="user-item" data-id="{{ u.id }}" data-name="{{ u.get_full_name|default:u.username }}"
+                data-post="{{ u.post.name }}" onclick="loadUserDetails(this, {{ u.id }})">
+                <div class="user-avatar" title="{{ u.get_full_name|default:u.username }} ({{ u.post.name }})">
+                    {{ u.get_full_name|default:u.username|slice:":2"|upper }}
+                </div>
+                <div class="user-info-meta">
+                    <span class="user-name">{{ u.get_full_name|default:u.username }}</span>
+                    <span class="user-designation">{{ u.post.name }}</span>
+                </div>
+                <span class="user-badge {% if u.total_pending > 0 %}badge-has-files{% else %}badge-zero{% endif %}">
+                    {{ u.total_pending }}
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Details View Panel -->
+    <div class="detail-pane" id="detailPanel">
+        <div class="empty-state">
+            <i class="fas fa-users-cog"></i>
+            <h3>Select a User</h3>
+            <p>Click on any user in the sidebar selector to retrieve their active pending files, designations, and
+                remarks.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Processing Files (External / Government) Section -->
+<div class="processing-container" id="processingSection">
+    <div class="processing-header">
+        <div class="processing-title-group">
+            <div class="processing-title-icon">
+                <i class="fas fa-paper-plane"></i>
+            </div>
+            <div>
+                <h3 class="processing-title">Files Under External / Government Processing</h3>
+                <p class="processing-subtitle">Files sent for external or government approval awaiting
+                    return/acknowledgement</p>
+            </div>
+            <span class="processing-count-badge">
+                {{ processing_count }} File{{ processing_count|pluralize }}
+            </span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <button onclick="printProcessingFiles()" class="back-btn no-print"
+                style="background: #edf2f7; border-color: #cbd5e1; font-size: 0.85rem; padding: 6px 12px;">
+                <i class="fas fa-print"></i> Print Processing Files
+            </button>
+            <div class="processing-search-box">
+                <span class="search-icon"><i class="fas fa-search"></i></span>
+                <input type="text" id="processingSearchQuery" class="search-input"
+                    placeholder="Search file no, subject, user, narration..." onkeyup="filterProcessingFiles()">
+            </div>
+        </div>
+    </div>
+
+    {% if processing_files %}
+    <div class="table-responsive-container processing-table-wrapper">
+        <table class="file-table" id="processingFilesTable">
+            <thead>
+                <tr>
+                    <th style="width: 5%; text-align: center;">Sl. No.</th>
+                    <th style="width: 17%;">File Number</th>
+                    <th style="width: 28%;">Subject / Heading</th>
+                    <th style="width: 10%;">Type</th>
+                    <th style="width: 17%;">Sent By (User & Post)</th>
+                    <th style="width: 23%;">Narration / Remarks</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in processing_files %}
+                <tr class="processing-row" data-fileno="{{ item.file.file_number|lower }}"
+                    data-subject="{{ item.file.subject|lower }}"
+                    data-type="{{ item.file.document_type.name|default:''|lower }}"
+                    data-user="{% if item.sent_by_user %}{{ item.sent_by_user.get_full_name|default:item.sent_by_user.username|lower }} {{ item.sent_by_post.name|default:''|lower }}{% endif %}"
+                    data-narration="{{ item.narration|lower }}">
+                    <td style="text-align: center; vertical-align: top; font-weight: 600; color: #64748b;">
+                        {{ forloop.counter }}
+                    </td>
+                    <td style="white-space: nowrap; vertical-align: top;">
+                        <a href="{% url 'file_detail' item.file.id %}" class="file-num-link">
+                            {{ item.file.file_number }}
+                        </a>
+                        <div
+                            style="font-size: 0.72rem; color: #64748b; margin-top: 3px; display: flex; align-items: center; gap: 4px;">
+                            <i class="far fa-calendar-alt" style="color: #94a3b8;"></i>
+                            <span>{{ item.file.created_at|date:"d-m-Y" }}</span>
+                        </div>
+                        {% if item.file.document_priority %}
+                        {% with p_name=item.file.document_priority.name|lower %}
+                        <span
+                            class="priority-badge {% if p_name == 'very urgent' %}priority-very-urgent{% elif p_name == 'urgent' %}priority-urgent{% elif p_name == 'normal' %}priority-normal{% else %}priority-gray{% endif %}">
+                            <i class="fas fa-exclamation-circle"></i> {{ item.file.document_priority.name }}
+                        </span>
+                        {% endwith %}
+                        {% endif %}
+                    </td>
+                    <td style="vertical-align: top; min-width: 180px;">
+                        <div style="color: #1e293b; font-weight: 600; line-height: 1.4;">{{ item.file.subject }}</div>
+                        <div style="margin-top: 5px;">
+                            <span class="badge-status-pill badge-status-processing">
+                                <i class="fas fa-hourglass-half" style="font-size: 0.65rem; margin-right: 3px;"></i>
+                                {{ item.file.current_status.name|default:"Processing" }}
+                            </span>
+                        </div>
+                    </td>
+                    <td style="white-space: nowrap; vertical-align: top;">
+                        <span style="font-weight: 500; color: #334155;">
+                            {{ item.file.document_type.name|default:"N/A" }}</span>
+                    </td>
+                    <td style="vertical-align: top;">
+                        {% if item.sent_by_user %}
+                        <div style="font-weight: 600; color: #1e293b; font-size: 0.86rem;">
+                            {{ item.sent_by_user.get_full_name|default:item.sent_by_user.username }}
+                        </div>
+                        {% if item.sent_by_post %}
+                        <div style="font-size: 0.75rem; color: #64748b; margin-top: 2px;">
+                            {{ item.sent_by_post.name }}
+                        </div>
+                        {% endif %}
+                        {% elif item.sent_by_post %}
+                        <div style="font-weight: 600; color: #1e293b;">{{ item.sent_by_post.name }}</div>
+                        {% else %}
+                        <span style="color: #94a3b8; font-style: italic;">Unspecified</span>
+                        {% endif %}
+                        {% if item.sent_at %}
+                        <div
+                            style="font-size: 0.72rem; color: #6366f1; margin-top: 4px; display: flex; align-items: center; gap: 3px;">
+                            <i class="far fa-clock"></i>
+                            <span>Sent: {{ item.sent_at|date:"d-m-Y H:i" }}</span>
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td style="vertical-align: top;">
+                        <div class="remark-text" style="color: #334155; line-height: 1.45;"
+                            title="{{ item.narration }}">
+                            {{ item.narration }}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div id="processingNoSearchResults" class="empty-state" style="display: none; padding: 30px 10px;">
+            <i class="fas fa-search" style="font-size: 1.8rem; color: #cbd5e1;"></i>
+            <h3>No Matching Processing Files</h3>
+            <p>No files match your search query in the processing list.</p>
+        </div>
+    </div>
+    {% else %}
+    <div class="empty-state"
+        style="padding: 35px 15px; background: white; border-radius: 8px; border: 1px dashed #e2e8f0; margin-top: 10px;">
+        <i class="fas fa-check-circle" style="color: #38a169; font-size: 2rem;"></i>
+        <h3 style="margin-top: 8px; color: #2d3748;">No Files in Processing</h3>
+        <p style="color: #718096; margin-bottom: 0;">Currently there are no files sent to Government or External
+            agencies waiting for processing.</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    function filterUsers() {
+        const query = document.getElementById('userSelectorQuery').value.toLowerCase();
+        const items = document.querySelectorAll('.user-item');
+
+        items.forEach(item => {
+            const name = item.getAttribute('data-name').toLowerCase();
+            const post = item.getAttribute('data-post').toLowerCase();
+
+            if (name.includes(query) || post.includes(query)) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+
+    function filterProcessingFiles() {
+        const query = (document.getElementById('processingSearchQuery') ? document.getElementById('processingSearchQuery').value.toLowerCase().trim() : '');
+        const rows = document.querySelectorAll('.processing-row');
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            const fileno = row.getAttribute('data-fileno') || '';
+            const subject = row.getAttribute('data-subject') || '';
+            const type = row.getAttribute('data-type') || '';
+            const user = row.getAttribute('data-user') || '';
+            const narration = row.getAttribute('data-narration') || '';
+
+            if (fileno.includes(query) || subject.includes(query) || type.includes(query) || user.includes(query) || narration.includes(query)) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        const noResults = document.getElementById('processingNoSearchResults');
+        if (noResults) {
+            if (visibleCount === 0 && query.length > 0) {
+                noResults.style.display = 'block';
+            } else {
+                noResults.style.display = 'none';
+            }
+        }
+    }
+
+    function resetSidebar() {
+        // Remove active states
+        const allItems = document.querySelectorAll('.user-item');
+        allItems.forEach(item => item.classList.remove('active'));
+
+        // Expand the sidebar
+        const sidebar = document.getElementById('userSidebar');
+        if (sidebar) {
+            sidebar.classList.remove('collapsed');
+        }
+
+        // Restore detail pane to empty state
+        const detailPanel = document.getElementById('detailPanel');
+        detailPanel.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-users-cog"></i>
+                <h3>Select a User</h3>
+                <p>Click on any user in the sidebar selector to retrieve their active pending files, designations, and remarks.</p>
+            </div>
+        `;
+    }
+
+    function loadUserDetails(element, userId) {
+        // Toggle active states in sidebar
+        const allItems = document.querySelectorAll('.user-item');
+        allItems.forEach(item => item.classList.remove('active'));
+        element.classList.add('active');
+
+        // Collapse the sidebar div to narrow path
+        const sidebar = document.getElementById('userSidebar');
+        if (sidebar) {
+            sidebar.classList.add('collapsed');
+        }
+
+        // Loading display state
+        const detailPanel = document.getElementById('detailPanel');
+        detailPanel.innerHTML = `
+            <div class="loader-box">
+                <div class="loader-spinner"><i class="fas fa-spinner fa-spin"></i></div>
+                <h3>Fetching Files...</h3>
+                <p>Retrieving recent custody information and remark history details from database.</p>
+            </div>
+        `;
+
+        // Fetch data
+        fetch(`/dashboard/summary/user/${userId}/`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('API Request Failed');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.files.length === 0) {
+                    detailPanel.innerHTML = `
+                        <div class="pane-title">
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                <button onclick="resetSidebar()" class="back-btn no-print">
+                                    <i class="fas fa-arrow-left"></i> Back
+                                </button>
+                                <span>Pending files for ${data.user_name}</span>
+                                <button onclick="printUserDetails()" class="back-btn no-print" style="margin-left: 10px; background: #edf2f7; border-color: #cbd5e1;">
+                                    <i class="fas fa-print"></i> Print User Summary
+                                </button>
+                            </div>
+                            <span class="pane-title-badge">${data.designation}</span>
+                        </div>
+                        <div class="empty-state">
+                            <i class="fas fa-check-circle" style="color: #38a169;"></i>
+                            <h3>No Pending Files</h3>
+                            <p>Good job! This user does not have any active files waiting for actions.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let rowsHtml = '';
+                data.files.forEach(file => {
+                    const statusClass = file.status.toLowerCase().replace(/\s+/g, '-');
+                    const priorityClass = file.priority.toLowerCase().replace(/\s+/g, '-');
+                    const priorityBadge = `<span class="priority-badge priority-${priorityClass}"><i class="fas fa-exclamation-circle"></i> ${file.priority}</span>`;
+
+                    rowsHtml += `
+                        <tr>
+                            <td style="white-space: nowrap; vertical-align: top;">
+                                <a href="/files/${file.id}/" class="file-num-link">${file.file_number}</a>
+                                <div style="font-size: 0.72rem; color: #64748b; margin-top: 3px; display: flex; align-items: center; gap: 4px;">
+                                    <i class="far fa-calendar-alt" style="color: #94a3b8;"></i>
+                                    <span>${file.created_at}</span>
+                                </div>
+                                ${priorityBadge}
+                            </td>
+                            <td style="vertical-align: top; min-width: 180px;"><div style="color: #1e293b; font-weight: 600; line-height: 1.4;">${file.subject}</div></td>
+                            <td style="white-space: nowrap; vertical-align: top;">${file.doc_type}</td>
+                            <td style="vertical-align: top; white-space: nowrap;">
+                                <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-start;">
+                                    <span class="badge-status-pill badge-status-${statusClass}">${file.status}</span>
+                                    ${file.has_processing_note ? '<span class="badge-status-pill badge-status-processing">PROCESSING</span>' : ''}
+                                </div>
+                            </td>
+                            <td style="vertical-align: top;">
+                                <span class="remark-text" title="${file.remark}" ${file.has_processing_note ? 'style="color: #4a5568; font-weight: 500;"' : ''}>${file.remark}</span>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                detailPanel.innerHTML = `
+                    <div class="pane-title">
+                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                            <button onclick="resetSidebar()" class="back-btn no-print">
+                                <i class="fas fa-arrow-left"></i> Back
+                            </button>
+                            <span>Pending files for ${data.user_name}</span>
+                            <button onclick="printUserDetails()" class="back-btn no-print" style="margin-left: 10px; background: #edf2f7; border-color: #cbd5e1;">
+                                <i class="fas fa-print"></i> Print User Summary
+                            </button>
+                        </div>
+                        <span class="pane-title-badge">${data.designation}</span>
+                    </div>
+                    <div class="table-responsive-container">
+                        <table class="file-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 15%;">File Number</th>
+                                    <th style="width: 45%;">Subject / Heading</th>
+                                    <th style="width: 10%;">Type</th>
+                                    <th style="width: 10%;">Status</th>
+                                    <th style="width: 20%;">Reason / Recent Remark</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rowsHtml}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            })
+            .catch(error => {
+                detailPanel.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle" style="color: #e53e3e;"></i>
+                        <h3>Error Loading Details</h3>
+                        <p>Something went wrong. Please check your network connection and try again.</p>
+                    </div>
+                `;
+            });
+    }
+
+    function printAllUsers() {
+        document.body.classList.add('print-all-users');
+        window.print();
+    }
+
+    function printUserDetails() {
+        document.body.classList.add('print-user-details');
+        window.print();
+    }
+
+    function printProcessingFiles() {
+        document.body.classList.add('print-processing-files');
+        window.print();
+    }
+
+    window.onafterprint = function () {
+        document.body.classList.remove('print-all-users', 'print-user-details', 'print-processing-files');
+    };
+</script>
+{% endblock %}

@@ -1,0 +1,1343 @@
+{% extends 'base.html' %}
+
+{% block title %}File {{ file.file_number }} - MOP System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+
+    .page-header h2 {
+        color: #333;
+        font-size: 1.8rem;
+    }
+
+    .file-status-badge {
+        background: #e3f2fd;
+        color: #1565c0;
+        padding: 2px 10px;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .priority-label {
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.68rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        letter-spacing: 0.3px;
+    }
+
+    .priority-label.priority-very-urgent {
+        background: #fff1f0;
+        color: #cf1322;
+        border: 1px solid #ffa39e;
+    }
+
+    .priority-label.priority-urgent {
+        background: #fff7e6;
+        color: #d46b08;
+        border: 1px solid #ffd591;
+    }
+
+    .priority-label.priority-normal {
+        background: #f6ffed;
+        color: #389e0d;
+        border: 1px solid #b7eb8f;
+    }
+
+    .priority-label.priority-gray {
+        background: #f5f5f5;
+        color: #595959;
+        border: 1px solid #d9d9d9;
+    }
+
+    .content-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 25px;
+    }
+
+    .detail-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        padding: 25px;
+        margin-bottom: 25px;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .card-title {
+        color: #4a5568;
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #edf2f7;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .card-title i {
+        color: #667eea;
+    }
+
+    .info-group {
+        margin-bottom: 20px;
+    }
+
+    .info-label {
+        color: #718096;
+        font-size: 0.75rem;
+        margin-bottom: 6px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .info-value {
+        color: #2d3748;
+        font-size: 1rem;
+        line-height: 1.6;
+        font-weight: 500;
+    }
+
+    .timeline {
+        position: relative;
+        padding-left: 10px;
+    }
+
+    .timeline-item {
+        position: relative;
+        padding-bottom: 10px;
+        border-left: 2px solid #e2e8f0;
+        padding-left: 25px;
+    }
+
+    .timeline-item:last-child {
+        border-left: 2px solid transparent;
+    }
+
+    .timeline-dot {
+        position: absolute;
+        left: -7px;
+        top: 4px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: white;
+        border: 3px solid #667eea;
+        box-shadow: 0 0 0 4px white;
+    }
+
+    .timeline-content h4 {
+        color: #2d3748;
+        font-size: 0.95rem;
+        margin-bottom: 4px;
+        font-weight: 600;
+    }
+
+    .timeline-meta {
+        color: #718096;
+        font-size: 0.8rem;
+        margin-bottom: 8px;
+        font-weight: 500;
+    }
+
+    .timeline-remarks {
+        background: #f7fafc;
+        padding: 12px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        color: #4a5568;
+        border-left: 4px solid #cbd5e0;
+        margin-top: 8px;
+    }
+
+    .timeline-dot.status-open {
+        border-color: #48bb78;
+    }
+
+    .timeline-dot.status-closed {
+        border-color: #f56565;
+    }
+
+    .timeline-dot.status-processing {
+        border-color: #7c3aed;
+        background: #f5f3ff;
+    }
+
+    .timeline-dot.status-approved {
+        border-color: #38a169;
+        background: #f0fff4;
+    }
+
+    .approval-sub-item {
+        margin-top: 10px;
+        padding: 9px 12px;
+        background: #f0fff4;
+        border-left: 3px solid #38a169;
+        border-radius: 0 6px 6px 0;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .approval-sub-item .approval-icon {
+        color: #38a169;
+        font-size: 0.8rem;
+        margin-top: 2px;
+        flex-shrink: 0;
+    }
+
+    .approval-sub-item .approval-text {
+        font-size: 0.82rem;
+        color: #276749;
+        font-weight: 600;
+        line-height: 1.4;
+    }
+
+    .approval-sub-item .approval-meta {
+        font-size: 0.75rem;
+        color: #48bb78;
+        font-weight: 500;
+        margin-top: 2px;
+    }
+
+    .shares-sub-item {
+        margin-top: 8px;
+        padding: 6px 12px;
+        background: #fffaf0;
+        border-left: 3px solid #ed8936;
+        border-radius: 0 6px 6px 0;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .shares-sub-item .shares-icon {
+        color: #ed8936;
+        font-size: 0.8rem;
+        margin-top: 2px;
+        flex-shrink: 0;
+    }
+
+    .shares-sub-item .shares-text {
+        font-size: 0.8rem;
+        color: #7b341e;
+        font-weight: 500;
+        line-height: 1.4;
+    }
+
+
+    .btn-action {
+        background: #667eea;
+        color: rgb(255, 255, 255);
+        text-decoration: none;
+        padding: 14px 25px;
+        border-radius: 10px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        transition: all 0.2s ease;
+        text-align: center;
+        width: 100%;
+        margin-bottom: 12px;
+        border: none;
+        cursor: pointer;
+        font-size: 0.95rem;
+        font-family: inherit;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .btn-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        filter: brightness(1.05);
+    }
+
+    .btn-action:active {
+        transform: translateY(0);
+    }
+
+    .btn-edit {
+        background: #ed8936;
+    }
+
+    /* Orange */
+    .btn-forward {
+        background: #667eea;
+    }
+
+    /* Indigo */
+    .btn-return {
+        background: #f56565;
+    }
+
+    /* Red */
+    .btn-approve {
+        background: #48bb78;
+    }
+
+    /* Green */
+    .btn-reject {
+        background: #e53e3e;
+    }
+
+    /* Deeper Red */
+    .btn-close {
+        background: #2d3748;
+    }
+
+    /* Dark Gray */
+
+    .document-list {
+        list-style: none;
+    }
+
+    .document-item {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .document-item:last-child {
+        border-bottom: none;
+    }
+
+    .doc-icon {
+        font-size: 1.5rem;
+        margin-right: 15px;
+    }
+
+    .doc-info {
+        flex: 1;
+    }
+
+    .doc-name {
+        font-weight: 600;
+        color: #333;
+        display: block;
+    }
+
+    .doc-meta {
+        font-size: 0.8rem;
+        color: #999;
+    }
+
+    .btn-action {
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+        color: white;
+        text-decoration: none;
+        padding: 12px 25px;
+        border-radius: 8px;
+        font-weight: 600;
+        display: inline-block;
+        transition: transform 0.3s ease;
+        text-align: center;
+        width: 100%;
+        margin-bottom: 10px;
+        border: none;
+        cursor: pointer;
+        font-size: 1rem;
+        font-family: inherit;
+    }
+
+    .btn-action:hover {
+        transform: translateY(-2px);
+    }
+
+    .btn-back {
+        color: #666;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-bottom: 20px;
+        font-size: 0.9rem;
+    }
+
+    /* Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+        background-color: #fefefe;
+        margin: 5% auto;
+        padding: 25px;
+        border: 1px solid #888;
+        width: 100%;
+        max-width: 500px;
+        border-radius: 12px;
+        position: relative;
+        max-height: 85vh;
+        /* Limit height to 85% of viewport */
+        overflow-y: auto;
+        /* Enable vertical scrolling */
+        animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+        from {
+            transform: translateY(-50px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .close:hover {
+        color: #333;
+    }
+
+    .form-group {
+        margin-bottom: 25px;
+        position: relative;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 10px;
+        font-weight: 700;
+        color: #2d3748;
+        font-size: 0.95rem;
+    }
+
+    .return-info-box {
+        background: #fffdf5;
+        padding: 18px;
+        border-radius: 10px;
+        border-left: 5px solid #f6ad55;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 8px rgba(246, 173, 85, 0.1);
+    }
+
+    .return-info-title {
+        font-weight: 800;
+        color: #9c4221;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 1rem;
+    }
+
+    .btn-submit {
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+        color: white;
+        padding: 14px;
+        border: none;
+        border-radius: 10px;
+        font-weight: 700;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    /* CC Selection Grid */
+    .cc-container {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 15px;
+        max-height: 200px;
+        overflow-y: auto;
+        background: #f8fafc;
+    }
+
+    .cc-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 10px;
+    }
+
+    .cc-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px;
+        background: white;
+        border: 1px solid #edf2f7;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .cc-item:hover {
+        border-color: #667eea;
+        background: #f0f4ff;
+    }
+
+    .cc-item input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+    }
+
+    .cc-item label {
+        margin-bottom: 0 !important;
+        font-size: 0.85rem !important;
+        font-weight: 500 !important;
+        cursor: pointer;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #edf2f7;
+    }
+
+    .modal-header h3 {
+        margin: 0;
+        font-size: 1.25rem;
+        color: #2d3748;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .modal-header h3 i {
+        color: #667eea;
+    }
+
+    .section-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #4a5568 !important;
+        font-size: 0.9rem !important;
+        margin-bottom: 10px !important;
+    }
+
+    .section-label i {
+        font-size: 0.8rem;
+        color: #718096;
+    }
+
+    /* Quick Remarks */
+    .quick-remarks-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+        margin-bottom: 12px;
+    }
+
+    .quick-remark-badge {
+        background: #ebf4ff;
+        color: #3182ce;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+        border: 1px solid #bee3f8;
+        transition: all 0.2s ease;
+        user-select: none;
+        display: inline-block;
+    }
+
+    .quick-remark-badge:hover {
+        background: #bee3f8;
+        color: #2c5282;
+        border-color: #90cdf4;
+        transform: translateY(-1px);
+    }
+
+    .quick-remark-badge:active {
+        transform: translateY(0);
+        background: #90cdf4;
+    }
+
+    /* ── Mobile & Tablet Responsive ── */
+    @media (max-width: 900px) {
+        .content-grid {
+            grid-template-columns: 1fr;
+        }
+
+        /* On mobile, show the side-info (actions) panel FIRST */
+        .side-info {
+            order: -1;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .page-header h2 {
+            font-size: 1.4rem;
+        }
+
+        .detail-card {
+            padding: 18px 15px;
+        }
+
+        /* Inline 2-column info grid → single column on mobile */
+        div[style*="grid-template-columns: 1fr 1fr"] {
+            display: block !important;
+        }
+
+        div[style*="grid-template-columns: 1fr 1fr"] .info-group {
+            margin-bottom: 15px;
+        }
+
+        .btn-action {
+            padding: 14px 20px;
+            font-size: 0.95rem;
+        }
+
+        .modal-content {
+            margin: 0 auto;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            max-width: 100%;
+            border-radius: 18px 18px 0 0;
+            max-height: 90vh;
+            padding: 20px 15px;
+            box-sizing: border-box;
+        }
+
+        .document-item {
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .doc-info {
+            min-width: 0;
+        }
+
+        .timeline {
+            padding-left: 10px;
+        }
+
+        /* .timeline-item {
+            padding-left: 18px;
+        } */
+
+    }
+
+    @media (max-width: 480px) {
+        .page-header h2 {
+            font-size: 1.2rem;
+        }
+
+        .file-status-badge {
+            font-size: 0.8rem;
+            padding: 4px 10px;
+        }
+
+        .card-title {
+            font-size: 1rem;
+        }
+
+        .info-label {
+            font-size: 0.8rem;
+        }
+
+        .info-value {
+            font-size: 0.95rem;
+        }
+
+        .timeline-content h4 {
+            font-size: 0.9rem;
+        }
+
+        .timeline-meta {
+            font-size: 0.78rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const modal = document.getElementById('actionModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const actionInput = document.getElementById('id_action_type');
+    const postSelectGroup = document.getElementById('postSelectGroup');
+    const postSelect = document.getElementById('id_assignee');
+    const remarksInput = document.getElementById('id_remarks');
+    const ccPostSelectGroup = document.getElementById("ccPostSelectGroup");
+    const toPostLabel = document.getElementById("toPostLabel");
+
+    function addRemark(text) {
+        if (remarksInput) {
+            if (remarksInput.value.trim() === "") {
+                remarksInput.value = text;
+            } else {
+                // Check if the remark already ends with common punctuation
+                const trimmed = remarksInput.value.trim();
+                const separator = /[.!?]$/.test(trimmed) ? " " : ". ";
+                remarksInput.value = trimmed + separator + text;
+            }
+            remarksInput.focus();
+            validateSubmit(); // Trigger validation if it exists
+        }
+    }
+
+    function openModal(action) {
+        modal.style.display = "block";
+        actionInput.value = action;
+        validateSubmit(); // Check button state on open
+
+        const returnInfoGroup = document.getElementById('returnInfoGroup');
+
+        if (action === 'FORWARD') {
+            modalTitle.innerText = "Forward File";
+            postSelectGroup.style.display = "block";
+            if (returnInfoGroup) returnInfoGroup.style.display = "none";
+            if (ccPostSelectGroup) {
+                {% if form.can_set_cc %}
+                ccPostSelectGroup.style.display = "block";
+                {% else %}
+                ccPostSelectGroup.style.display = "none";
+                {% endif %}
+            }
+            toPostLabel.innerText = "Assign Action To";
+            postSelect.required = true;
+            remarksInput.placeholder = "Enter forwarding remarks...";
+        } else if (action === 'RETURN') {
+            modalTitle.innerText = "Return File";
+            postSelectGroup.style.display = "none";
+            if (returnInfoGroup) returnInfoGroup.style.display = "block";
+            if (ccPostSelectGroup) ccPostSelectGroup.style.display = "none";
+            postSelect.required = false;
+            remarksInput.placeholder = "Enter reason for return...";
+        } else if (action === 'APPROVE') {
+            modalTitle.innerText = "Approve File";
+            postSelectGroup.style.display = "none";
+            if (returnInfoGroup) returnInfoGroup.style.display = "none";
+            if (ccPostSelectGroup) ccPostSelectGroup.style.display = "none";
+            postSelect.required = false;
+            remarksInput.placeholder = "Enter approval remarks...";
+        } else if (action === 'REJECT') {
+            modalTitle.innerText = "Reject File";
+            postSelectGroup.style.display = "none";
+            if (returnInfoGroup) returnInfoGroup.style.display = "none";
+            if (ccPostSelectGroup) ccPostSelectGroup.style.display = "none";
+            postSelect.required = false;
+            remarksInput.placeholder = "Enter rejection remarks...";
+        } else if (action === 'CLOSE') {
+            modalTitle.innerText = "Close File Finally";
+            postSelectGroup.style.display = "none";
+            if (returnInfoGroup) returnInfoGroup.style.display = "none";
+            if (ccPostSelectGroup) ccPostSelectGroup.style.display = "none";
+            postSelect.required = false;
+            remarksInput.placeholder = "Enter final closing remarks...";
+        } else if (action === 'KEEP_IN_FILE') {
+            modalTitle.innerText = "Keep on File";
+            postSelectGroup.style.display = "none";
+            if (returnInfoGroup) returnInfoGroup.style.display = "none";
+            if (ccPostSelectGroup) ccPostSelectGroup.style.display = "none";
+            postSelect.required = false;
+            remarksInput.placeholder = "Enter narration to keep this file on hold...";
+        } else if (action === 'EXTERNAL') {
+            modalTitle.innerText = "Send to Govt/External Approval";
+            postSelectGroup.style.display = "none";
+            if (returnInfoGroup) returnInfoGroup.style.display = "none";
+            if (ccPostSelectGroup) ccPostSelectGroup.style.display = "none";
+            postSelect.required = false;
+            remarksInput.placeholder = "Enter routing details / external reference...";
+        } else if (action === 'ACK_RETURN') {
+            modalTitle.innerText = "Acknowledge Govt/External Return";
+            postSelectGroup.style.display = "none";
+            if (returnInfoGroup) returnInfoGroup.style.display = "none";
+            if (ccPostSelectGroup) ccPostSelectGroup.style.display = "none";
+            postSelect.required = false;
+            remarksInput.placeholder = "Enter outcome / receipt details...";
+        } else if (action === 'PROCESSING_NOTE') {
+            modalTitle.innerText = "Add Internal Processing Note";
+            postSelectGroup.style.display = "none";
+            if (returnInfoGroup) returnInfoGroup.style.display = "none";
+            if (ccPostSelectGroup) ccPostSelectGroup.style.display = "none";
+            postSelect.required = false;
+            remarksInput.placeholder = "Enter internal processing note (e.g., waiting for delivery)...";
+        }
+    }
+
+    function closeModal() {
+        modal.style.display = "none";
+    }
+
+    // Assignee validation logic
+    const submitBtn = document.getElementById('submitBtn');
+
+    function validateSubmit() {
+        const action = actionInput.value;
+        const assignee = postSelect.value;
+
+        if (action === 'FORWARD') {
+            if (!assignee) {
+                submitBtn.disabled = true;
+                submitBtn.style.opacity = '0.5';
+                submitBtn.style.cursor = 'not-allowed';
+            } else {
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '1';
+                submitBtn.style.cursor = 'pointer';
+            }
+        } else {
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '1';
+            submitBtn.style.cursor = 'pointer';
+        }
+    }
+
+    if (postSelect) {
+        postSelect.addEventListener('change', validateSubmit);
+    }
+
+    // Auto-open modal if requested via URL
+    window.addEventListener('load', function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('action') === 'forward') {
+            openModal('FORWARD');
+            // Clean up the URL without refreshing
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, newUrl);
+        }
+    });
+
+    window.onclick = function (event) {
+        if (event.target == modal) {
+            closeModal();
+        }
+    }
+
+    // Action form validation for multiple files
+    document.getElementById('actionForm').addEventListener('submit', function (e) {
+        const actionAttachment = document.querySelector('input[name="action_attachment"]');
+        if (actionAttachment && actionAttachment.files.length > 0) {
+            for (let i = 0; i < actionAttachment.files.length; i++) {
+                const fileSize = actionAttachment.files[i].size / 1024; // KB
+                if (fileSize > 200) {
+                    e.preventDefault();
+                    alert(`File "${actionAttachment.files[i].name}" exceeds the 200KB limit.`);
+                    return;
+                }
+            }
+        }
+    });
+
+</script>
+{% endblock %}
+{% block content %}
+<a href="javascript:history.back()" class="btn-back"><i class="fas fa-arrow-left"></i> Back to List</a>
+
+<div class="page-header">
+    <div>
+        <h2>{{ file.file_number }}</h2>
+        <p style="color: #666;">Created on {{ file.created_at|date:"F d, Y" }}</p>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center;">
+        <span class="priority-label priority-{{ file.document_priority.name|slugify|default:'gray' }}">
+            {% if file.document_priority.name == 'Very Urgent' %}<i class="fas fa-exclamation-triangle"></i>
+            {% elif file.document_priority.name == 'Urgent' %}<i class="fas fa-bolt"></i>
+            {% elif file.document_priority.name == 'Normal' %}<i class="fas fa-check-circle"></i>
+            {% else %}<i class="fas fa-info-circle"></i>{% endif %}
+            Priority: {{ file.document_priority.name }}
+        </span>
+
+        {% if file.processing_note and not file.is_closed %}
+        <span class="file-status-badge"
+            style="background-color: #ed8936; color: white; display: inline-flex; align-items: center; gap: 4px;"><i
+                class="fas fa-sticky-note"></i> Internal Processing</span>
+        {% endif %}
+
+        {% if file.current_status.name == 'Keep in File' and file.approved_by %}
+        <span class="file-status-badge"
+            style="background-color: #38a169; color: white; display: inline-flex; align-items: center; gap: 4px;"><i
+                class="fas fa-check-circle"></i> Approved</span>
+        <span class="file-status-badge"
+            style="background-color: #607d8b; color: white; display: inline-flex; align-items: center; gap: 4px;"><i
+                class="fas fa-folder-open"></i> Keep in File</span>
+        {% elif file.current_status.name == 'Processing' %}
+        <span class="file-status-badge"
+            style="background-color: #7c3aed; color: white; display: inline-flex; align-items: center; gap: 4px;"><i
+                class="fas fa-hourglass-half"></i> Processing</span>
+        {% else %}
+        <span class="file-status-badge">{{ file.current_status.name }}</span>
+        {% endif %}
+    </div>
+</div>
+
+<div class="content-grid">
+    <!-- Left Column: Details & Content -->
+    <div class="main-info">
+        <div class="detail-card">
+            <h3 class="card-title"><i class="fas fa-file-alt"></i> File Information</h3>
+
+            <div class="info-group">
+                <div class="info-label">Subject</div>
+                <div class="info-value">{{ file.subject }}</div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="info-group">
+                    <div class="info-label">Department</div>
+                    <div class="info-value">{{ file.department.name }}</div>
+                </div>
+                <div class="info-group">
+                    <div class="info-label">Document Type</div>
+                    <div class="info-value">{{ file.document_type.name }}</div>
+                </div>
+                <div class="info-group">
+                    <div class="info-label">Priority</div>
+                    <div class="info-value">{{ file.document_priority.name }}</div>
+                </div>
+                <div class="info-group">
+                    <div class="info-label">Origin</div>
+                    <div class="info-value">{{ file.document_origin.name }}</div>
+                </div>
+            </div>
+
+            {% if file.remarks %}
+            <div class="info-group">
+                <div class="info-label">Initial Remarks</div>
+                <div class="info-value" style="background: #f9fafb; padding: 10px; border-radius: 6px;">
+                    {{ file.remarks}}</div>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if is_current_holder and not file.is_closed %}
+        <div style="margin-bottom: 20px; text-align: right;">
+            <button onclick="openModal('PROCESSING_NOTE')" class="btn-action"
+                style="background: #fff3cd; color: #856404; border: 1px dashed #ffeeba; width: auto; display: inline-block; box-shadow: none; font-weight: 600; padding: 8px 16px; font-size: 0.85rem;">
+                <i class="fas fa-pencil-alt"></i> Add Processing Note
+            </button>
+        </div>
+        {% endif %}
+
+        <div class="detail-card">
+            <h3 class="card-title"><i class="fas fa-paperclip"></i> Attached Documents</h3>
+            {% if documents %}
+            <ul class="document-list">
+                {% for doc in documents %}
+                <li class="document-item">
+                    <div class="doc-icon"><i class="fas fa-file-pdf"></i></div>
+                    <div class="doc-info">
+                        <span class="doc-name">{{ doc.description|default:"Document" }}</span>
+                        <span class="doc-meta">Uploaded by {{ doc.uploaded_by.get_full_name }} on
+                            {{doc.uploaded_at|date:"M d, Y" }}</span>
+                    </div>
+                    <a href="{% url 'document_viewer' file.id doc.id %}" target="doc_viewer"
+                        style="color: #667eea; text-decoration: none;">View</a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p style="color: #999; text-align: center;">No documents attached</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Right Column: History & Actions -->
+    <div class="side-info">
+        {% if not is_current_holder and is_shared and not share_obj.is_viewed %}
+        <div class="detail-card">
+            <h3 class="card-title"><i class="fas fa-eye"></i> Files to View</h3>
+            <p style="font-size: 0.85rem; color: #666; margin-bottom: 15px;">You have received this file for viewing.
+                Mark it as read to move it to your 'Viewed' list.</p>
+            <form action="{% url 'mark_as_read' file.id %}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn-action" style="background: #4fd1c5; border: none; color: white;">
+                    <i class="fas fa-check-double"></i> Mark as Read
+                </button>
+            </form>
+        </div>
+        {% elif not is_current_holder and is_shared and share_obj.is_viewed %}
+        <div class="detail-card">
+            <h3 class="card-title"><i class="fas fa-check-circle"></i> Viewed</h3>
+            <p style="font-size: 0.85rem; color: #666;">
+                You marked this file as read on {{ share_obj.viewed_at|date:"M d, Y h:i A" }}.</p>
+        </div>
+        {% endif %}
+
+        {% if is_current_holder %}
+        <div class="detail-card">
+            <h3 class="card-title"><i class="fas fa-bolt"></i> Actions</h3>
+            {% if file.current_status.name == 'Processing' %}
+            <button onclick="openModal('ACK_RETURN')" class="btn-action"
+                style="background: #4caf50; border: none; color: white;">
+                <i class="fas fa-check-double"></i> Acknowledge Govt/External Return
+            </button>
+            {% else %}
+            {% if file.created_by.post == request.user.post and not file.is_closed %}
+            <a href="{% url 'edit_file' file.id %}" class="btn-action btn-edit">
+                <i class="fas fa-edit"></i> Edit File Details
+            </a>
+            {% endif %}
+
+            <button onclick="openModal('FORWARD')" class="btn-action btn-forward">
+                <i class="fas fa-paper-plane"></i> Forward File
+            </button>
+
+            <button onclick="openModal('EXTERNAL')" class="btn-action">
+                <i class="fas fa-share-square"></i> Send to Govt/External Approval
+            </button>
+
+            {% if movements %}
+            <button onclick="openModal('RETURN')" class="btn-action btn-return">
+                <i class="fas fa-undo"></i> Return File
+            </button>
+            {% endif %}
+
+            {% if not file.approved_by %}
+            <button onclick="openModal('APPROVE')" class="btn-action btn-approve">
+                <i class="fas fa-check-circle"></i> Approve
+            </button>
+            {% endif %}
+
+            {% if movements and not file.approved_by %}
+            <button onclick="openModal('REJECT')" class="btn-action btn-reject">
+                <i class="fas fa-times-circle"></i> Reject
+            </button>
+            {% endif %}
+
+            {% if file.current_status.name != 'Keep in File' %}
+            <button onclick="openModal('KEEP_IN_FILE')" class="btn-action"
+                style="background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%); border: none; color: white;">
+                <i class="fas fa-folder-open"></i> Keep in File
+            </button>
+            {% endif %}
+
+            {% if request.user.post.priority <= 1.5 %} <button onclick="openModal('CLOSE')" class="btn-action btn-close"
+                style="margin-top: 10px;">
+                <i class="fas fa-lock"></i> Close File Finally
+                </button>
+                {% endif %}
+                {% endif %}
+        </div>
+
+        <!-- Action Modal -->
+        <div id="actionModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="modalTitle"><i class="fas fa-tasks"></i> Process File</h3>
+                    <span class="close" onclick="closeModal()">&times;</span>
+                </div>
+
+                <form method="post" enctype="multipart/form-data" id="actionForm">
+                    {% csrf_token %}
+                    {{ form.action_type }}
+
+                    <!-- Forward Section -->
+                    <div class="form-group" id="postSelectGroup">
+                        <label class="section-label"><i class="fas fa-user-tie"></i> <span id="toPostLabel">Select
+                                Recipient</span></label>
+                        {{ form.assignee }}
+                        {% if form.assignee.errors %}
+                        <div class="error" style="color: #e53e3e; font-size: 0.8rem; margin-top: 5px;">{{
+                            form.assignee.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group" id="returnInfoGroup" style="display: none;">
+                        <div class="return-info-box">
+                            <div class="return-info-title"><i class="fas fa-undo-alt"></i> Return Information</div>
+                            <div style="color: #744210; font-size: 0.95rem;">This file will be returned to: <strong>
+                                {% if return_to_user %}{{ return_to_user.get_full_name|default:return_to_user.username }} ({{ return_to_post.name }}){% else %}{{ return_to_post.name|default:"the original sender" }}{% endif %}</strong></div>
+                        </div>
+                    </div>
+
+                    <!-- CC Section -->
+                    {% if form.can_set_cc %}
+                    <div class="form-group" id="ccPostSelectGroup" style="display: none;">
+                        <label class="section-label"><i class="fas fa-users"></i> Share Copy With (View Only)</label>
+                        <div class="cc-container">
+                            <div class="cc-grid">
+                                {% for choice_value, choice_label in form.cc_users.field.choices %}
+                                <div class="cc-item">
+                                    <input type="checkbox" name="cc_users" value="{{ choice_value }}"
+                                        id="cc_{{ choice_value }}">
+                                    <label for="cc_{{ choice_value }}">{{ choice_label }}</label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div
+                            style="font-size: 0.75rem; color: #718096; margin-top: 8px; display: flex; align-items: center; gap: 5px;">
+                            <i class="fas fa-lightbulb"></i> Selected users will have read-only access.
+                        </div>
+                        {% if form.cc_users.errors %}
+                        <div class="error" style="color: #e53e3e; font-size: 0.8rem; margin-top: 5px;">
+                            {{ form.cc_users.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Remarks Section -->
+                    <div class="form-group">
+                        <label class="section-label"><i class="fas fa-comment-dots"></i> Remarks</label>
+                        {{ form.remarks }}
+                        <div class="quick-remarks-container">
+                            <span class="quick-remark-badge"
+                                onclick="addRemark('Forwarded for kind perusal and necessary action.')">Forwarded for
+                                perusal</span>
+                            <span class="quick-remark-badge"
+                                onclick="addRemark('For information and further action.')">For information</span>
+                            <span class="quick-remark-badge"
+                                onclick="addRemark('Please verify and submit a report.')">Please verify</span>
+                            <span class="quick-remark-badge"
+                                onclick="addRemark('Approved as proposed.')">Approved</span>
+                            <span class="quick-remark-badge" onclick="addRemark('Discuss with me.')">Discuss</span>
+                            <span class="quick-remark-badge" onclick="addRemark('Keep on file.')">Keep on file</span>
+                        </div>
+                        <small style="color: #718096; font-size: 0.75rem;">Remarks are required for all actions.</small>
+                        {% if form.remarks.errors %}
+                        <div class="error" style="color: #e53e3e; font-size: 0.8rem; margin-top: 5px;">
+                            {{ form.remarks.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label class="section-label"><i class="fas fa-paperclip"></i> Support Document / Compressed File
+                            (Optional)</label>
+                        {{ form.action_attachment }}
+                    </div>
+
+                    <div class="form-group">
+                        <label class="section-label"><i class="fas fa-file-signature"></i> Document Description</label>
+                        {{ form.action_attachment_description }}
+                    </div>
+
+                    <div style="margin-top: 30px;">
+                        <button type="submit" class="btn-submit" id="submitBtn" style="width: 100%;">
+                            <i class="fas fa-check"></i> Confirm & Process
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+
+
+        <div class="detail-card">
+            <h3 class="card-title"><i class="fas fa-history"></i> Movement History</h3>
+            <div class="timeline">
+                <!-- Creation — always at top -->
+                <div class="timeline-item">
+                    <div class="timeline-dot" style="background: #e0e0e0; border-color: #999;"></div>
+                    <div class="timeline-content">
+                        <h4>Created by {{ file.created_by.post.name }}{% if file.created_by.post.has_multiple_users %} -
+                            {{ file.created_by.get_full_name|default:file.created_by.username }}{% endif %}</h4>
+                        <div class="timeline-meta">{{ file.created_at|date:"M d, Y h:i A" }}</div>
+                        {% for action in creation_actions %}
+                        {% if action.action_type == 'APPROVE' %}
+                        <div class="approval-sub-item">
+                            <span class="approval-icon"><i class="fas fa-check-circle"></i></span>
+                            <div>
+                                <div class="approval-text">Approved by {{ action.post.name }}{% if action.post.has_multiple_users %} &mdash; {{ action.action_by.get_full_name|default:action.action_by.username }}{% endif %}</div>
+                                <div class="approval-meta">{{ action.action_at|date:"M d, Y h:i A" }}</div>
+                            </div>
+                        </div>
+                        {% elif action.action_type == 'PROCESSING_NOTE' %}
+                        <div class="timeline-remarks"
+                            style="margin-top: 8px; border-left-color: #ed8936; background: #fffaf0; color: #7b341e;">
+                            <strong style="display: flex; align-items: center; gap: 5px;"><i
+                                    class="fas fa-sticky-note"></i> Processing Note : </strong>{{ action.remarks }}
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+
+                        {% if creation_shares %}
+                        <div class="shares-sub-item">
+                            <span class="shares-icon"><i class="fas fa-eye"></i></span>
+                            <div class="shares-text">
+                                (CC:
+                                {% for share in creation_shares %}
+                                {% if share.shared_with_user %}
+                                {{ share.shared_with_user.get_full_name|default:share.shared_with_user.username }}
+                                {% else %}
+                                {{ share.shared_with.name }}
+                                {% endif %}{% if not forloop.last %}, {% endif %}
+                                {% endfor %})
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Movements in ascending (chronological) order -->
+                {% for movement in movements %}
+
+                {% if movement.remarks %}
+                <div class="timeline-item" style="padding-bottom: 15px;">
+                    <div class="timeline-content" style="padding-top: 0;">
+                        <div class="timeline-remarks" style="margin-top: 0; margin-bottom: 0;">{{ movement.remarks }}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="timeline-item">
+                    <div class="timeline-dot" {% if movement.from_post == movement.to_post %} {% if "SENT FOR EXTERNAL" in movement.remarks or "EXTERNAL/GOVERNMENT" in movement.remarks %}
+                        style="background: #fde8ef; border-color: #e91e63;" {% elif "ACKNOWLEDGED RETURN" in movement.remarks or "RETURN FROM GOVT" in movement.remarks %}
+                        style="background: #eafaf1; border-color: #4caf50;" {% else %}
+                        style="background: #eceff1; border-color: #607d8b;" {% endif %} {% endif %}>
+                    </div>
+                    <div class="timeline-content">
+                        <h4>
+                            {% if movement.from_post == movement.to_post %}
+                            {% if "SENT FOR EXTERNAL" in movement.remarks or "EXTERNAL/GOVERNMENT" in movement.remarks %}
+                            <i class="fas fa-share-square" style="color: #e91e63; margin-right: 5px;"></i> Sent to
+                            Govt/External by
+                            {% elif "ACKNOWLEDGED RETURN" in movement.remarks or "RETURN FROM GOVT" in movement.remarks %}
+                            <i class="fas fa-check-double" style="color: #4caf50; margin-right: 5px;"></i> Returned from
+                            Govt/External to
+                            {% else %}
+                            <i class="fas fa-folder-open" style="color: #607d8b; margin-right: 5px;"></i> Kept in File
+                            by
+                            {% endif %}
+                            {% elif movement.is_return %}
+                            Returned to
+                            {% else %}
+                            Received by
+                            {% endif %}
+                            {{ movement.to_post.name }}{% if movement.to_user and movement.to_post.has_multiple_users %} - {{ movement.to_user.get_full_name|default:movement.to_user.username }}{% endif %}
+                        </h4>
+                        <div class="timeline-meta">{{ movement.moved_at|date:"M d, Y h:i A" }}</div>
+                        {% for action in movement.associated_actions %}
+                        {% if action.action_type == 'APPROVE' %}
+                        <div class="approval-sub-item">
+                            <span class="approval-icon"><i class="fas fa-check-circle"></i></span>
+                            <div>
+                                <div class="approval-text">Approved by {{ action.post.name }}
+                                    {% if action.post.has_multiple_users %} &mdash; {{ action.action_by.get_full_name|default:action.action_by.username }}{% endif %}</div>
+                                <div class="approval-meta">{{ action.action_at|date:"M d, Y h:i A" }}</div>
+                            </div>
+                        </div>
+                        {% elif action.action_type == 'PROCESSING_NOTE' %}
+                        <div class="timeline-remarks"
+                            style="margin-top: 8px; border-left-color: #ed8936; background: #fffaf0; color: #7b341e;">
+                            <strong style="display: flex; align-items: center; gap: 5px;"><i
+                                    class="fas fa-sticky-note"></i> Processing Note : </strong>{{ action.remarks }}
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+
+                        {% if movement.associated_shares %}
+                        <div class="shares-sub-item">
+                            <span class="shares-icon"><i class="fas fa-eye"></i></span>
+                            <div class="shares-text">
+                                (CC:
+                                {% for share in movement.associated_shares %}
+                                {% if share.shared_with_user %}
+                                {{ share.shared_with_user.get_full_name|default:share.shared_with_user.username }}
+                                {% else %}
+                                {{ share.shared_with.name }}
+                                {% endif %}{% if not forloop.last %}, {% endif %}
+                                {% endfor %})
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- Current holder / Closed — always at bottom -->
+                <div class="timeline-item">
+                    <div class="timeline-dot 
+                        {% if file.is_closed %}
+                            status-closed
+                        {% elif file.current_status.name == 'Processing' %}
+                            status-processing
+                        {% else %}
+                            status-open
+                        {% endif %}">
+                    </div>
+                    <div class="timeline-content">
+                        <h4>
+                            {% if file.is_closed %}
+                            Closed by {{ file.closed_by.post.name }}{% if file.closed_by.post.has_multiple_users %} - {{ file.closed_by.get_full_name|default:file.closed_by.username }}{% endif %}
+                            {% elif file.current_status.name == 'Processing' %}
+                            Currently with Government / External
+                            {% else %}
+                            Currently with {{ file.current_holder.name }}{% if file.current_user and file.current_holder.has_multiple_users %} - {{ file.current_user.get_full_name|default:file.current_user.username }}{% endif %}
+                            {% endif %}
+                        </h4>
+                        {% if file.is_closed %}
+                        <div class="timeline-meta">
+                            Closed on {{ file.closed_at|date:"M d, Y h:i A" }}
+                        </div>
+                        {% for action in actions_list %}
+                        {% if action.action_type == 'CLOSE' %}
+                        <div class="timeline-remarks"
+                            style="border-left-color: #f56565; background: #fff5f5; color: #742a2a; margin-top: 8px;">
+                            <strong>Closure Narration:</strong> "{{ action.remarks }}"
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,362 @@
+{% extends 'base.html' %}
+
+{% block title %}Files Created - MOP System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+
+    .page-header h2 {
+        color: #333;
+        font-size: 2rem;
+    }
+
+    .search-box form {
+        display: flex;
+        gap: 10px;
+    }
+
+    .search-input {
+        padding: 10px 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        width: 300px;
+        transition: border-color 0.3s ease;
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+
+    .btn-search {
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+    .files-list {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+
+    .file-item {
+        padding: 20px;
+        border-bottom: 1px solid #f0f0f0;
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 20px;
+        align-items: center;
+        transition: background 0.3s ease;
+    }
+
+    .file-item:last-child {
+        border-bottom: none;
+    }
+
+    .file-item:hover {
+        background: #f9fafb;
+    }
+
+    .movement-status {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        background: #e3f2fd;
+        color: #1565c0;
+    }
+
+    .file-content h3 {
+        color: #333;
+        font-size: 1.1rem;
+        margin-bottom: 5px;
+    }
+
+    .file-meta {
+        display: flex;
+        gap: 15px;
+        color: #666;
+        font-size: 0.85rem;
+    }
+
+    .file-meta span {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .file-actions .btn-track {
+        background: white;
+        border: 2px solid #667eea;
+        color: #667eea;
+        padding: 8px 15px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+
+    .file-actions .btn-track:hover {
+        background: #667eea;
+        color: white;
+    }
+
+    .pagination {
+        margin-top: 30px;
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .page-link {
+        padding: 8px 12px;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        text-decoration: none;
+        color: #666;
+        transition: all 0.3s ease;
+    }
+
+    .page-link:hover {
+        background: #f5f5f5;
+        border-color: #666;
+    }
+
+    .page-link.active {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+    }
+
+    .priority-badge {
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        letter-spacing: 0.3px;
+    }
+
+    .priority-very-urgent {
+        background: #ffebee;
+        color: #c62828;
+    }
+
+    .priority-urgent {
+        background: #fff3e0;
+        color: #e65100;
+    }
+
+    .priority-normal {
+        background: #f0fdf4;
+        color: #166534;
+    }
+
+    .priority-gray {
+        background: #f5f5f5;
+        color: #757575;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #999;
+    }
+
+    .empty-state-icon {
+        font-size: 4rem;
+        margin-bottom: 15px;
+    }
+
+    /* ── Tablet & Mobile Responsive ── */
+    @media (max-width: 1024px) {
+        .page-header {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 15px;
+        }
+        
+        .search-box, .search-box form {
+            width: 100%;
+        }
+        
+        .search-input {
+            width: 100%;
+            flex: 1;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .page-header h2 {
+            font-size: 1.5rem;
+        }
+
+        .search-box form {
+            width: 100%;
+            flex-direction: column;
+        }
+
+        .search-input {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .btn-search {
+            width: 100%;
+        }
+
+        .file-item {
+            grid-template-columns: auto 1fr;
+            grid-template-rows: auto auto;
+            gap: 12px;
+            padding: 15px;
+        }
+
+        .file-actions {
+            grid-column: 1 / -1;
+        }
+
+        .file-actions .btn-track {
+            display: block;
+            text-align: center;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .file-meta {
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .file-content h3 {
+            font-size: 1rem;
+        }
+
+        .pagination {
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .movement-status {
+            width: 34px;
+            height: 34px;
+            font-size: 1rem;
+        }
+
+        .file-meta {
+            font-size: 0.78rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Files Created</h2>
+    <div class="search-box">
+        <form method="GET">
+            <input type="text" name="search" class="search-input" placeholder="Search created files..."
+                value="{{ search_query }}">
+            <button type="submit" class="btn-search">Search</button>
+        </form>
+    </div>
+</div>
+
+<div class="files-list">
+    {% if page_obj %}
+    {% for file in page_obj %}
+    <div class="file-item">
+        <div class="movement-status"><i class="fas fa-plus-square"></i></div>
+
+        <div class="file-content">
+            <h3>
+                <a href="{% url 'file_detail' file.id %}" style="text-decoration: none; color: inherit;">
+                    <span style="color: #667eea; margin-right: 10px;">{{ file.file_number }}</span>{{ file.subject }}
+                </a>
+            </h3>
+            <div class="file-meta">
+                <span><i class="far fa-calendar-alt"></i> Created On: {{ file.created_at|date:"M d, Y h:i A" }}</span>
+                <span><i class="fas fa-layer-group"></i> Type: {{ file.document_type.name }}</span>
+                <span>
+                    <span class="priority-badge priority-{{ file.document_priority.name|slugify|default:'gray' }}">
+                        <i class="fas fa-exclamation-circle"></i> Priority: {{ file.document_priority.name }}
+                    </span>
+                </span>
+                <span><i class="fas fa-info-circle"></i> Status: 
+                    {% if file.current_status.name == 'Keep in File' and file.approved_by %}
+                        Approved & Keep in File
+                    {% else %}
+                        {{ file.current_status.name }}
+                    {% endif %}
+                </span>
+                <span><i class="fas fa-user-tie"></i> Current Holder: {{ file.current_holder.name }}</span>
+            </div>
+        </div>
+
+        <div class="file-actions">
+            <a href="{% url 'file_detail' file.id %}" class="btn-track">View Details</a>
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon"><i class="fas fa-folder-open"></i></div>
+        <p>No created files found</p>
+    </div>
+    {% endif %}
+</div>
+
+{% if page_obj.has_other_pages %}
+<div class="pagination">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}"
+        class="page-link">&lt;&lt;previous</a>
+    {% endif %}
+
+    {% for i in page_range %}
+        {% if i == page_obj.paginator.ELLIPSIS %}
+            <span class="page-link" style="border: none; pointer-events: none;">..</span>
+        {% else %}
+            <a href="?page={{ i }}{% if search_query %}&search={{ search_query }}{% endif %}"
+                class="page-link {% if page_obj.number == i %}active{% endif %}">
+                {{ i }}
+            </a>
+        {% endif %}
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}"
+        class="page-link">next>></a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

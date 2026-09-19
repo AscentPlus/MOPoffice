@@ -1,0 +1,308 @@
+{% extends 'base.html' %}
+
+{% block title %}Create User - MOP System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        margin-bottom: 30px;
+    }
+
+    .page-header h2 {
+        color: #333;
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+
+    .page-header .subtitle {
+        color: #666;
+        font-size: 1rem;
+    }
+
+    .form-container {
+        max-width: 800px;
+        background: white;
+        padding: 40px;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        border: 1px solid #edf2f7;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 25px;
+        margin-bottom: 25px;
+    }
+
+    .form-group {
+        margin-bottom: 5px;
+    }
+
+    .form-group.full-width {
+        grid-column: span 2;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 10px;
+        font-weight: 600;
+        color: #2d3748;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .form-group label i {
+        color: #667eea;
+        font-size: 1rem;
+        width: 18px;
+        text-align: center;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 1rem;
+        color: #4a5568;
+        transition: all 0.3s ease;
+        background: #f8fafc;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #667eea;
+        background: white;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    }
+
+    .help-text {
+        font-size: 0.82rem;
+        color: #718096;
+        margin-top: 6px;
+        font-weight: 400;
+    }
+
+    .error-text {
+        color: #e53e3e;
+        font-size: 0.85rem;
+        margin-top: 6px;
+        display: block;
+        font-weight: 500;
+    }
+
+    .btn-container {
+        display: flex;
+        gap: 16px;
+        padding-top: 20px;
+        border-top: 1px solid #edf2f7;
+        margin-top: 10px;
+    }
+
+    .btn-submit {
+        flex: 1;
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+        color: white;
+        padding: 14px 24px;
+        border: none;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 4px 15px rgba(118, 75, 162, 0.3);
+    }
+
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(118, 75, 162, 0.4);
+    }
+
+    .btn-cancel {
+        background: #fff;
+        color: #718096;
+        padding: 14px 28px;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-cancel:hover {
+        background: #f8fafc;
+        border-color: #cbd5e0;
+        color: #4a5568;
+    }
+
+    /* Mobile adjustments */
+    @media (max-width: 768px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .form-group.full-width {
+            grid-column: span 1;
+        }
+
+        .form-container {
+            padding: 25px 20px;
+        }
+
+        .btn-container {
+            flex-direction: column;
+        }
+
+        .btn-submit,
+        .btn-cancel {
+            width: 100%;
+        }
+
+        .btn-cancel {
+            order: 2;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>{{ title|default:"Create New User" }}</h2>
+    <p class="subtitle">Add a new user and assign their official post</p>
+</div>
+
+<div class="form-container">
+    <form method="POST" autocomplete="off">
+        {% csrf_token %}
+
+        {# Hidden dummy fields to consume browser autofill attempts #}
+        <input type="text" name="prevent_autofill_user" style="display:none" />
+        <input type="password" name="prevent_autofill_pwd" style="display:none" />
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-error" style="margin-bottom: 25px;">
+            <i class="fas fa-exclamation-circle"></i>
+            {{ form.non_field_errors.0 }}
+        </div>
+        {% endif %}
+
+        <div class="form-grid">
+            <!-- Username -->
+            <div class="form-group full-width">
+                <label for="{{ form.username.id_for_label }}">
+                    <i class="fas fa-user-tag"></i> Username *
+                </label>
+                {{ form.username }}
+                {% if form.username.help_text %}
+                <div class="help-text">{{ form.username.help_text }}</div>
+                {% endif %}
+                {% if form.username.errors %}
+                <span class="error-text">{{ form.username.errors.0 }}</span>
+                {% endif %}
+            </div>
+
+            <!-- Password -->
+            <div class="form-group">
+                <label for="{{ form.password.id_for_label }}">
+                    <i class="fas fa-lock"></i> Password *
+                </label>
+                {{ form.password }}
+                {% if form.password.help_text %}
+                <div class="help-text">{{ form.password.help_text }}</div>
+                {% endif %}
+                {% if form.password.errors %}
+                <span class="error-text">{{ form.password.errors.0 }}</span>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.confirm_password.id_for_label }}">
+                    <i class="fas fa-check-double"></i> Confirm Password *
+                </label>
+                {{ form.confirm_password }}
+                {% if form.confirm_password.errors %}
+                <span class="error-text">{{ form.confirm_password.errors.0 }}</span>
+                {% endif %}
+            </div>
+
+            <!-- Names -->
+            <div class="form-group">
+                <label for="{{ form.first_name.id_for_label }}">
+                    <i class="fas fa-user"></i> First Name *
+                </label>
+                {{ form.first_name }}
+                {% if form.first_name.errors %}
+                <span class="error-text">{{ form.first_name.errors.0 }}</span>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.last_name.id_for_label }}">
+                    <i class="fas fa-user"></i> Last Name
+                </label>
+                {{ form.last_name }}
+                {% if form.last_name.errors %}
+                <span class="error-text">{{ form.last_name.errors.0 }}</span>
+                {% endif %}
+            </div>
+
+            <!-- Official Post -->
+            <div class="form-group full-width">
+                <label for="{{ form.post.id_for_label }}">
+                    <i class="fas fa-id-badge"></i> Official Post *
+                </label>
+                {{ form.post }}
+                {% if form.post.help_text %}
+                <div class="help-text">{{ form.post.help_text }}</div>
+                {% endif %}
+                {% if form.post.errors %}
+                <span class="error-text">{{ form.post.errors.0 }}</span>
+                {% endif %}
+            </div>
+
+            <!-- Contact -->
+            <div class="form-group">
+                <label for="{{ form.email.id_for_label }}">
+                    <i class="fas fa-envelope"></i> Email
+                </label>
+                {{ form.email }}
+                {% if form.email.errors %}
+                <span class="error-text">{{ form.email.errors.0 }}</span>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.mobile.id_for_label }}">
+                    <i class="fas fa-phone"></i> Mobile
+                </label>
+                {{ form.mobile }}
+                {% if form.mobile.errors %}
+                <span class="error-text">{{ form.mobile.errors.0 }}</span>
+                {% endif %}
+            </div>
+
+
+        </div>
+
+        <div class="btn-container">
+            <button type="submit" class="btn-submit">
+                <i class="fas fa-user-plus"></i> Create User
+            </button>
+            <a href="{% url 'user_list' %}" class="btn-cancel">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
